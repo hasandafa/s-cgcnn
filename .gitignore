@@ -9,6 +9,11 @@ config/*.key
 config/*.token
 .env
 .env.local
+ACTION_PLAN.md
+clean_data.bat
+quick_test.bat
+setu_windows.bat
+setup_windows.ps1
 
 # ===== PYTHON =====
 # Byte-compiled / optimized / DLL files
