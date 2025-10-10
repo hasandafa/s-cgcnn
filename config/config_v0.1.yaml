@@ -1,0 +1,106 @@
+# =====================================
+# s-CGCNN Configuration - Version 0.1
+# Data Acquisition & Interpolation
+# =====================================
+
+project:
+  name: "s-cgcnn"
+  version: "0.1.0"
+  title: "Simplified Graph Neural Networks for CPU-Efficient Screening of AlₓGa₁₋ₓAs Alloys"
+  author: "Abdullah Hasan Dafa"
+  
+# Materials Project API
+materials_project:
+  api_key_file: "config/mp_api_key.txt"
+  materials:
+    GaAs:
+      mp_id: "mp-2534"
+      composition: "GaAs"
+      x_value: 0.0
+    AlAs:
+      mp_id: "mp-2172"
+      composition: "AlAs"
+      x_value: 1.0
+  
+  # Properties to fetch from MP
+  properties:
+    - "structure"
+    - "band_gap"
+    - "density"
+    - "formation_energy_per_atom"
+    - "energy_per_atom"
+    - "efermi"
+    - "is_gap_direct"
+    - "is_metal"
+    - "elastic_tensor"
+    - "piezoelectric_tensor"
+    - "dielectric"
+
+# Interpolation Settings
+interpolation:
+  method: "ordered_supercell"  # ordered supercell substitution
+  x_range:
+    start: 0.0
+    end: 1.0
+    step: 0.025
+  
+  # Supercell size for substitution
+  supercell:
+    size: [2, 2, 2]  # 2x2x2 supercell = 16 atoms (8 Ga/Al, 8 As)
+    
+  # Bowing parameters for AlGaAs (from literature)
+  bowing_parameters:
+    lattice_constant:  # a(x) = a_GaAs*(1-x) + a_AlAs*x - b*x*(1-x)
+      linear: true
+      bowing: -0.0078  # Å
+    
+    band_gap:
+      direct:
+        bowing: -0.127  # eV (Γ valley)
+      indirect:
+        bowing: 0.055   # eV (X valley)
+      crossover_x: 0.45  # Crossover from direct to indirect
+    
+    elastic_c11:
+      bowing: 0.0  # GPa (assumed linear)
+    
+    elastic_c12:
+      bowing: 0.0
+      
+    elastic_c44:
+      bowing: 0.0
+    
+    density:
+      linear: true  # g/cm³
+      
+    thermal_conductivity:
+      bowing: -0.15  # W/m·K (estimated)
+    
+    refractive_index:
+      bowing: -0.0  # assumed linear
+    
+    electron_affinity:
+      bowing: 0.0  # eV
+
+# Data Paths
+paths:
+  data_root: "data"
+  raw_data: "data/raw"
+  structures: "data/structures"
+  cif_output: "data/structures/cif"
+  metadata: "data/structures/metadata"
+  logs: "logs"
+
+# Logging
+logging:
+  level: "INFO"  # DEBUG, INFO, WARNING, ERROR
+  format: "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
+  file: "logs/v0.1_data_acquisition.log"
+  console: true
+
+# Validation
+validation:
+  check_stoichiometry: true
+  check_lattice_match: true
+  lattice_tolerance: 0.05  # Å
+  save_validation_report: true

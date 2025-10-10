@@ -179,7 +179,7 @@ pip install mp-api==0.41.2
 Save your working configuration:
 
 ```powershell
-pip freeze > requirements-locked.txt
+pip freeze > requirements.txt
 ```
 
 ---
@@ -263,10 +263,10 @@ After successful installation, you should have:
 
 ## Important Files
 
-### requirements-locked.txt
+### requirements.txt
 Contains exact versions of all installed packages. Use this for reproducibility:
 ```powershell
-pip install -r requirements-locked.txt
+pip install -r requirements.txt
 ```
 
 ### sitecustomize.py

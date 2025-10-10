@@ -1,0 +1,28 @@
+{
+  "mp_fetching": {
+    "status": "PASSED",
+    "gaas_structure": "Ga1 As1",
+    "alas_structure": "Al1 As1"
+  },
+  "structure_generation": {
+    "status": "PASSED",
+    "total_structures": 41
+  },
+  "property_calculation": {
+    "status": "PASSED",
+    "test_points": [
+      0.0,
+      0.25,
+      0.45,
+      0.5,
+      0.75,
+      1.0
+    ]
+  },
+  "validation": {
+    "status": "PASSED",
+    "cif_files": 41,
+    "metadata_files": 42
+  },
+  "overall_status": "PASSED"
+}
