@@ -1,288 +1,428 @@
 """
-Physical Constants and Reference Data for AlGaAs System
-Reference: ioffe.ru/SVA/NSM/Semicond/AlGaAs/
+AlGaAs Material Properties Constants - Version 0.1.1
+Enhanced with dual data source: Literature vs MP-API
+
+Author: Abdullah Hasan Dafa
+Source: ioffe.ru/SVA/NSM/Semicond/AlGaAs/ (Literature)
+        Materials Project API (MP-API)
 """
 
-import numpy as np
+from typing import Dict, Any, Literal
+from dataclasses import dataclass, field
 
-# ==========================================
-# FUNDAMENTAL CONSTANTS
-# ==========================================
-ELEMENTARY_CHARGE = 1.602176634e-19  # C
-PLANCK_CONSTANT = 6.62607015e-34  # J·s
-BOLTZMANN_CONSTANT = 1.380649e-23  # J/K
-ELECTRON_MASS = 9.1093837015e-31  # kg
-SPEED_OF_LIGHT = 299792458  # m/s
+# ============================================================================
+# DATA SOURCE TYPES
+# ============================================================================
+DataSourceType = Literal["literature", "mp_api"]
 
-# ==========================================
-# ALGAAS REFERENCE DATA (at 300K)
-# Source: ioffe.ru
-# ==========================================
 
-# GaAs Properties (x = 0.0)
-GaAs_PROPERTIES = {
-    # Structural
-    "lattice_constant": 5.65325,  # Å at 300K
+# ============================================================================
+# LITERATURE-BASED PROPERTIES (Experimental Values from ioffe.ru)
+# ============================================================================
+@dataclass
+class LiteratureProperties:
+    """Experimental properties from Ioffe Institute Database"""
+    
+    # Reference information
+    source: str = "ioffe.ru/SVA/NSM/Semicond/AlGaAs/"
+    reference: str = "Ioffe Institute NSM Archive"
+    note: str = "Experimental values - recommended for device engineering"
+    
+    # Temperature for measurements
+    temperature: float = 300.0  # K (room temperature)
+
+
+# GaAs Properties (Literature - Experimental)
+GAAS_PROPERTIES_LITERATURE = {
+    # ========== Physical Properties ==========
+    "lattice_constant": 5.6533,  # Å at 300K
     "density": 5.3176,  # g/cm³
+    "thermal_expansion": 5.73e-6,  # 1/K at 300K
     
-    # Electronic
-    "band_gap_direct": 1.424,  # eV (Γ valley)
-    "band_gap_indirect_X": 1.900,  # eV (X valley)
-    "band_gap_indirect_L": 1.708,  # eV (L valley)
-    "band_gap_type": "direct",
+    # ========== Electronic Properties ==========
+    "band_gap": 1.424,  # eV at 300K (DIRECT GAP - Experimental)
+    "band_gap_type": "direct",  # Γ valley minimum
+    "band_gap_temperature_coeff": -0.000454,  # eV/K (dEg/dT)
     "electron_affinity": 4.07,  # eV
-    "work_function": 4.8,  # eV
     
-    # Effective masses (in units of m₀)
-    "electron_effective_mass_gamma": 0.067,
-    "electron_effective_mass_L": 0.55,
-    "electron_effective_mass_X": 0.85,
-    "hole_effective_mass_heavy": 0.50,
-    "hole_effective_mass_light": 0.082,
-    "hole_effective_mass_split_off": 0.154,
+    # Effective masses (in units of free electron mass m₀)
+    "effective_mass_electron": 0.067,  # mₑ* (Γ valley)
+    "effective_mass_hole_heavy": 0.45,  # mₕₕ*
+    "effective_mass_hole_light": 0.082,  # mₗₕ*
+    "effective_mass_hole_split_off": 0.154,  # mₛₒ*
     
-    # Dielectric constants
-    "static_dielectric_constant": 12.9,
-    "optical_dielectric_constant": 10.89,
-    "refractive_index": 3.3,  # at 1 eV
+    # ========== Optical Properties ==========
+    "dielectric_constant_static": 12.9,  # εₛ (static)
+    "dielectric_constant_high_freq": 10.9,  # ε∞ (high frequency/optical)
+    "refractive_index": 3.3,  # n at 1.0 eV
     
-    # Elastic constants (GPa)
-    "elastic_c11": 118.8,
-    "elastic_c12": 53.8,
-    "elastic_c44": 59.4,
-    "bulk_modulus": 75.5,
-    "shear_modulus": 33.5,
+    # ========== Mechanical Properties (Elastic Constants) ==========
+    "elastic_constant_c11": 1188.0,  # GPa
+    "elastic_constant_c12": 538.0,   # GPa
+    "elastic_constant_c44": 594.0,   # GPa
+    "bulk_modulus": 75.5,  # GPa (K = (C₁₁ + 2C₁₂)/3)
+    "shear_modulus": 33.0,  # GPa (approximate)
+    "youngs_modulus": 85.5,  # GPa
     
-    # Thermal properties
-    "thermal_conductivity": 46.0,  # W/m·K at 300K
-    "thermal_expansion": 6.86e-6,  # 1/K at 300K
-    "specific_heat": 330,  # J/kg·K
-    "debye_temperature": 344,  # K
+    # ========== Thermal Properties ==========
+    "thermal_conductivity": 0.46,  # W/(cm·K) at 300K
+    "specific_heat": 0.35,  # J/(g·K) at 300K
+    "debye_temperature": 344.0,  # K
     
-    # Transport (at 300K)
-    "electron_mobility": 8500,  # cm²/V·s
-    "hole_mobility": 400,  # cm²/V·s
+    # ========== Transport Properties ==========
+    "electron_mobility": 8500.0,  # cm²/(V·s) at 300K (undoped)
+    "hole_mobility": 400.0,  # cm²/(V·s) at 300K (undoped)
 }
 
-# AlAs Properties (x = 1.0)
-AlAs_PROPERTIES = {
-    # Structural
+
+# AlAs Properties (Literature - Experimental)
+ALAS_PROPERTIES_LITERATURE = {
+    # ========== Physical Properties ==========
     "lattice_constant": 5.6611,  # Å at 300K
     "density": 3.760,  # g/cm³
-    
-    # Electronic
-    "band_gap_direct": 3.099,  # eV (Γ valley)
-    "band_gap_indirect_X": 2.168,  # eV (X valley) - FUNDAMENTAL
-    "band_gap_indirect_L": 2.46,  # eV (L valley)
-    "band_gap_type": "indirect",
-    "electron_affinity": 3.5,  # eV
-    "work_function": 4.5,  # eV (estimated)
-    
-    # Effective masses (in units of m₀)
-    "electron_effective_mass_gamma": 0.15,
-    "electron_effective_mass_L": 0.68,
-    "electron_effective_mass_X": 1.1,
-    "hole_effective_mass_heavy": 0.76,
-    "hole_effective_mass_light": 0.15,
-    "hole_effective_mass_split_off": 0.28,
-    
-    # Dielectric constants
-    "static_dielectric_constant": 10.06,
-    "optical_dielectric_constant": 8.16,
-    "refractive_index": 2.95,  # at 2 eV
-    
-    # Elastic constants (GPa)
-    "elastic_c11": 125.0,
-    "elastic_c12": 53.4,
-    "elastic_c44": 54.2,
-    "bulk_modulus": 77.3,
-    "shear_modulus": 36.6,
-    
-    # Thermal properties
-    "thermal_conductivity": 91.0,  # W/m·K at 300K
     "thermal_expansion": 5.2e-6,  # 1/K at 300K
-    "specific_heat": 440,  # J/kg·K (estimated)
-    "debye_temperature": 417,  # K
     
-    # Transport (at 300K)
-    "electron_mobility": 280,  # cm²/V·s (X valley)
-    "hole_mobility": 200,  # cm²/V·s
+    # ========== Electronic Properties ==========
+    "band_gap": 2.168,  # eV at 300K (INDIRECT GAP - Experimental)
+    "band_gap_type": "indirect",  # X valley minimum
+    "band_gap_temperature_coeff": -0.000396,  # eV/K (dEg/dT)
+    "electron_affinity": 3.5,  # eV
+    
+    # Effective masses (in units of free electron mass m₀)
+    "effective_mass_electron": 0.15,  # mₑ* (X valley for indirect gap)
+    "effective_mass_hole_heavy": 0.51,  # mₕₕ*
+    "effective_mass_hole_light": 0.18,  # mₗₕ*
+    "effective_mass_hole_split_off": 0.25,  # mₛₒ*
+    
+    # ========== Optical Properties ==========
+    "dielectric_constant_static": 10.06,  # εₛ (static)
+    "dielectric_constant_high_freq": 8.16,  # ε∞ (high frequency/optical)
+    "refractive_index": 2.95,  # n at 2.0 eV
+    
+    # ========== Mechanical Properties (Elastic Constants) ==========
+    "elastic_constant_c11": 1250.0,  # GPa
+    "elastic_constant_c12": 534.0,   # GPa
+    "elastic_constant_c44": 542.0,   # GPa
+    "bulk_modulus": 77.6,  # GPa (K = (C₁₁ + 2C₁₂)/3)
+    "shear_modulus": 30.0,  # GPa (approximate)
+    "youngs_modulus": 79.0,  # GPa
+    
+    # ========== Thermal Properties ==========
+    "thermal_conductivity": 0.91,  # W/(cm·K) at 300K
+    "specific_heat": 0.48,  # J/(g·K) at 300K
+    "debye_temperature": 417.0,  # K
+    
+    # ========== Transport Properties ==========
+    "electron_mobility": 280.0,  # cm²/(V·s) at 300K (undoped)
+    "hole_mobility": 180.0,  # cm²/(V·s) at 300K (undoped)
 }
 
-# ==========================================
-# BOWING PARAMETERS
-# For property P: P(x) = (1-x)*P_GaAs + x*P_AlAs - b*x*(1-x)
-# ==========================================
+
+# ============================================================================
+# MP-API BASED PROPERTIES (DFT-Calculated from Materials Project)
+# ============================================================================
+# Note: These are PLACEHOLDERS - actual values fetched dynamically from MP API
+# DFT-GGA values typically underestimate band gaps by 30-50%
+
+GAAS_PROPERTIES_MP_API = {
+    # ========== Physical Properties ==========
+    "lattice_constant": None,  # Fetched from MP structure
+    "density": None,  # Calculated from MP structure
+    "volume": None,  # From MP
+    
+    # ========== Electronic Properties (DFT) ==========
+    "band_gap": None,  # DFT value (typically ~0.19 eV, underestimated!)
+    "band_gap_type": "direct",  # DFT structure
+    "vbm": None,  # Valence Band Maximum (eV)
+    "cbm": None,  # Conduction Band Minimum (eV)
+    "is_gap_direct": None,  # Boolean
+    "is_metal": False,
+    
+    # ========== Thermodynamic Properties ==========
+    "formation_energy_per_atom": None,  # eV/atom
+    "energy_above_hull": None,  # eV/atom (stability metric)
+    "decomposition_enthalpy": None,  # eV/atom
+    
+    # ========== Mechanical Properties ==========
+    "bulk_modulus": None,  # GPa (from elastic tensor)
+    "shear_modulus": None,  # GPa (from elastic tensor)
+    "elastic_tensor": None,  # Full 6x6 tensor
+    "elastic_anisotropy": None,
+    "poissons_ratio": None,
+    
+    # ========== Optical/Dielectric Properties ==========
+    "dielectric_constant_static": None,  # Total dielectric tensor
+    "dielectric_constant_electronic": None,  # Electronic contribution
+    "dielectric_constant_ionic": None,  # Ionic contribution
+    "refractive_index": None,  # Calculated from ε∞
+    
+    # ========== Magnetic Properties ==========
+    "total_magnetization": None,  # μB/unit cell
+    "is_magnetic": False,
+    
+    # ========== MP Metadata ==========
+    "mp_id": "mp-2534",
+    "formula": "GaAs",
+    "space_group": None,
+    "crystal_system": "cubic",
+    "point_group": None,
+}
+
+
+ALAS_PROPERTIES_MP_API = {
+    # ========== Physical Properties ==========
+    "lattice_constant": None,  # Fetched from MP structure
+    "density": None,  # Calculated from MP structure
+    "volume": None,  # From MP
+    
+    # ========== Electronic Properties (DFT) ==========
+    "band_gap": None,  # DFT value (typically ~1.50 eV, underestimated!)
+    "band_gap_type": "indirect",  # DFT structure
+    "vbm": None,  # Valence Band Maximum (eV)
+    "cbm": None,  # Conduction Band Minimum (eV)
+    "is_gap_direct": None,  # Boolean
+    "is_metal": False,
+    
+    # ========== Thermodynamic Properties ==========
+    "formation_energy_per_atom": None,  # eV/atom
+    "energy_above_hull": None,  # eV/atom (stability metric)
+    "decomposition_enthalpy": None,  # eV/atom
+    
+    # ========== Mechanical Properties ==========
+    "bulk_modulus": None,  # GPa (from elastic tensor)
+    "shear_modulus": None,  # GPa (from elastic tensor)
+    "elastic_tensor": None,  # Full 6x6 tensor
+    "elastic_anisotropy": None,
+    "poissons_ratio": None,
+    
+    # ========== Optical/Dielectric Properties ==========
+    "dielectric_constant_static": None,  # Total dielectric tensor
+    "dielectric_constant_electronic": None,  # Electronic contribution
+    "dielectric_constant_ionic": None,  # Ionic contribution
+    "refractive_index": None,  # Calculated from ε∞
+    
+    # ========== Magnetic Properties ==========
+    "total_magnetization": None,  # μB/unit cell
+    "is_magnetic": False,
+    
+    # ========== MP Metadata ==========
+    "mp_id": "mp-2172",
+    "formula": "AlAs",
+    "space_group": None,
+    "crystal_system": "cubic",
+    "point_group": None,
+}
+
+
+# ============================================================================
+# BOWING PARAMETERS (Used for both Literature and MP-API modes)
+# ============================================================================
+# Vegard's Law deviation: P(x) = xP(AlAs) + (1-x)P(GaAs) - bx(1-x)
+
 BOWING_PARAMETERS = {
-    "lattice_constant": -0.0078,  # Å
-    "band_gap_gamma": -0.127,  # eV (direct)
-    "band_gap_X": 0.055,  # eV (indirect X)
-    "band_gap_L": 0.055,  # eV (indirect L)
-    "electron_affinity": 0.0,  # eV (assumed linear)
-    "static_dielectric": 0.0,  # assumed linear
-    "optical_dielectric": 0.0,  # assumed linear
-    "refractive_index": -0.0,  # assumed linear
-    "thermal_conductivity": -15.0,  # W/m·K (estimated)
-    "thermal_expansion": 0.0,  # assumed linear
-    "elastic_c11": 0.0,  # GPa (assumed linear)
-    "elastic_c12": 0.0,
-    "elastic_c44": 0.0,
+    # Electronic properties
+    "band_gap": 0.37,  # eV (most important for direct-indirect transition)
+    "electron_affinity": 0.0,  # Approximately linear
+    
+    # Optical properties  
+    "dielectric_constant_static": 0.0,  # Approximately linear
+    "dielectric_constant_high_freq": 0.0,  # Approximately linear
+    "refractive_index": 0.0,  # Small bowing
+    
+    # Mechanical properties
+    "elastic_constant_c11": 0.0,  # Small bowing
+    "elastic_constant_c12": 0.0,  # Small bowing
+    "elastic_constant_c44": 0.0,  # Small bowing
+    "bulk_modulus": 0.0,  # Approximately linear
+    
+    # Transport properties
+    "electron_mobility": 0.0,  # Complex behavior, use linear approximation
+    "hole_mobility": 0.0,  # Complex behavior, use linear approximation
+    
+    # All other properties assumed linear (bowing = 0.0)
 }
 
-# Direct-to-indirect crossover
-CROSSOVER_X = 0.45  # Al fraction where band gap changes from direct to indirect
 
-# ==========================================
-# BRILLOUIN ZONE K-PATH (for FCC zinc-blende)
-# Standard path: Γ-X-U|K-Γ-L-W-X
-# ==========================================
-KPATH_FCC = {
-    "path": ["GAMMA", "X", "U", "K", "GAMMA", "L", "W", "X"],
-    "special_points": {
-        "GAMMA": [0.0, 0.0, 0.0],
-        "X": [0.5, 0.0, 0.5],
-        "L": [0.5, 0.5, 0.5],
-        "W": [0.5, 0.25, 0.75],
-        "K": [0.375, 0.375, 0.75],
-        "U": [0.625, 0.25, 0.625],
-    },
-    "npoints": 100,  # Points between each high-symmetry point
+# ============================================================================
+# DIRECT-TO-INDIRECT TRANSITION (Critical for AlGaAs!)
+# ============================================================================
+CROSSOVER_COMPOSITION = 0.45  # x value where transition occurs
+
+BAND_GAP_BEHAVIOR = {
+    "direct_range": (0.0, 0.45),  # x < 0.45: Direct gap (Γ valley)
+    "indirect_range": (0.45, 1.0),  # x ≥ 0.45: Indirect gap (X valley)
+    "crossover_x": CROSSOVER_COMPOSITION,
+    "note": "Direct-indirect crossover is composition-dependent"
 }
 
-# ==========================================
-# ATOMIC DATA
-# ==========================================
-ATOMIC_NUMBERS = {
-    "Ga": 31,
-    "Al": 13,
-    "As": 33,
-}
 
-ATOMIC_MASSES = {  # g/mol
-    "Ga": 69.723,
-    "Al": 26.982,
-    "As": 74.922,
-}
-
-COVALENT_RADII = {  # Å
-    "Ga": 1.22,
-    "Al": 1.21,
-    "As": 1.21,
-}
-
-# ==========================================
+# ============================================================================
 # UTILITY FUNCTIONS
-# ==========================================
+# ============================================================================
 
-def calculate_property_vegard(P_GaAs: float, P_AlAs: float, x: float, 
-                               bowing: float = 0.0) -> float:
+def get_properties(
+    material: Literal["GaAs", "AlAs"],
+    source: DataSourceType = "literature"
+) -> Dict[str, Any]:
     """
-    Calculate property using Vegard's Law with bowing parameter.
-    
-    P(x) = (1-x)*P_GaAs + x*P_AlAs - b*x*(1-x)
+    Get material properties from specified data source.
     
     Args:
-        P_GaAs: Property value for GaAs (x=0)
-        P_AlAs: Property value for AlAs (x=1)
-        x: Al fraction (0 to 1)
-        bowing: Bowing parameter
+        material: "GaAs" or "AlAs"
+        source: "literature" (experimental) or "mp_api" (DFT)
     
     Returns:
-        Interpolated property value
+        Dictionary of material properties
     """
-    return (1 - x) * P_GaAs + x * P_AlAs - bowing * x * (1 - x)
-
-
-def get_band_gap_algaas(x: float) -> dict:
-    """
-    Calculate band gap for AlGaAs at composition x.
-    Accounts for direct-to-indirect crossover.
+    if source == "literature":
+        if material == "GaAs":
+            return GAAS_PROPERTIES_LITERATURE.copy()
+        elif material == "AlAs":
+            return ALAS_PROPERTIES_LITERATURE.copy()
+        else:
+            raise ValueError(f"Unknown material: {material}")
     
-    Args:
-        x: Al fraction (0 to 1)
+    elif source == "mp_api":
+        if material == "GaAs":
+            return GAAS_PROPERTIES_MP_API.copy()
+        elif material == "AlAs":
+            return ALAS_PROPERTIES_MP_API.copy()
+        else:
+            raise ValueError(f"Unknown material: {material}")
     
-    Returns:
-        dict with 'value', 'type', and 'valley' keys
-    """
-    # Direct gap (Γ valley)
-    Eg_direct = calculate_property_vegard(
-        GaAs_PROPERTIES["band_gap_direct"],
-        AlAs_PROPERTIES["band_gap_direct"],
-        x,
-        BOWING_PARAMETERS["band_gap_gamma"]
-    )
-    
-    # Indirect gap (X valley)
-    Eg_indirect_X = calculate_property_vegard(
-        GaAs_PROPERTIES["band_gap_indirect_X"],
-        AlAs_PROPERTIES["band_gap_indirect_X"],
-        x,
-        BOWING_PARAMETERS["band_gap_X"]
-    )
-    
-    # Determine fundamental gap
-    if x < CROSSOVER_X:
-        return {
-            "value": Eg_direct,
-            "type": "direct",
-            "valley": "Gamma",
-            "Eg_direct": Eg_direct,
-            "Eg_indirect_X": Eg_indirect_X
-        }
     else:
-        return {
-            "value": Eg_indirect_X,
-            "type": "indirect",
-            "valley": "X",
-            "Eg_direct": Eg_direct,
-            "Eg_indirect_X": Eg_indirect_X
-        }
+        raise ValueError(f"Unknown data source: {source}. Use 'literature' or 'mp_api'")
 
 
-def get_lattice_constant(x: float) -> float:
-    """Calculate lattice constant for AlₓGa₁₋ₓAs."""
-    return calculate_property_vegard(
-        GaAs_PROPERTIES["lattice_constant"],
-        AlAs_PROPERTIES["lattice_constant"],
-        x,
-        BOWING_PARAMETERS["lattice_constant"]
-    )
-
-
-def get_density(x: float) -> float:
-    """Calculate density for AlₓGa₁₋ₓAs (linear interpolation)."""
-    return calculate_property_vegard(
-        GaAs_PROPERTIES["density"],
-        AlAs_PROPERTIES["density"],
-        x,
-        0.0  # No bowing for density
-    )
-
-
-# ==========================================
-# COMPOSITION GENERATOR
-# ==========================================
-
-def generate_compositions(x_start: float = 0.0, x_end: float = 1.0, 
-                         x_step: float = 0.025) -> np.ndarray:
+def is_property_available(
+    property_name: str,
+    source: DataSourceType
+) -> bool:
     """
-    Generate array of Al fractions.
+    Check if a property is available in the specified data source.
     
     Args:
-        x_start: Starting Al fraction
-        x_end: Ending Al fraction
-        x_step: Step size
+        property_name: Name of the property
+        source: Data source type
     
     Returns:
-        Array of x values
+        True if property is available (not None)
     """
-    return np.arange(x_start, x_end + x_step/2, x_step)
+    if source == "literature":
+        gaas = GAAS_PROPERTIES_LITERATURE
+        alas = ALAS_PROPERTIES_LITERATURE
+    else:  # mp_api
+        gaas = GAAS_PROPERTIES_MP_API
+        alas = ALAS_PROPERTIES_MP_API
+    
+    return (
+        property_name in gaas and gaas[property_name] is not None and
+        property_name in alas and alas[property_name] is not None
+    )
 
 
-# Generate default composition array
-X_VALUES = generate_compositions(0.0, 1.0, 0.025)
-N_COMPOSITIONS = len(X_VALUES)
+def get_bowing_parameter(property_name: str) -> float:
+    """
+    Get bowing parameter for Vegard's Law.
+    
+    Args:
+        property_name: Name of the property
+    
+    Returns:
+        Bowing parameter (0.0 if not specified = linear interpolation)
+    """
+    return BOWING_PARAMETERS.get(property_name, 0.0)
 
-print(f"AlGaAs Constants Module Loaded")
-print(f"Total compositions: {N_COMPOSITIONS}")
-print(f"X range: {X_VALUES[0]:.3f} to {X_VALUES[-1]:.3f}")
+
+def determine_band_gap_type(x: float) -> str:
+    """
+    Determine if band gap is direct or indirect based on composition.
+    
+    Args:
+        x: Al composition (0.0 to 1.0)
+    
+    Returns:
+        "direct" or "indirect"
+    """
+    return "direct" if x < CROSSOVER_COMPOSITION else "indirect"
+
+
+# ============================================================================
+# DATA SOURCE COMPARISON UTILITIES
+# ============================================================================
+
+def get_literature_vs_mp_comparison(material: Literal["GaAs", "AlAs"]) -> Dict:
+    """
+    Compare literature vs MP-API values for a material.
+    
+    Returns dictionary with comparison data for available properties.
+    """
+    lit = get_properties(material, "literature")
+    mp = get_properties(material, "mp_api")
+    
+    comparison = {}
+    
+    # Only compare properties available in both sources
+    common_keys = set(lit.keys()) & set(mp.keys())
+    
+    for key in common_keys:
+        if lit[key] is not None and mp[key] is not None:
+            comparison[key] = {
+                "literature": lit[key],
+                "mp_api": mp[key],
+                "difference": None if isinstance(lit[key], str) else (mp[key] - lit[key]),
+                "relative_diff_percent": None if isinstance(lit[key], str) else 
+                    (100 * (mp[key] - lit[key]) / lit[key] if lit[key] != 0 else None)
+            }
+    
+    return comparison
+
+
+# ============================================================================
+# EXPORT DATA SOURCE CONFIGURATION
+# ============================================================================
+
+DATA_SOURCE_INFO = {
+    "literature": {
+        "name": "Experimental Literature Values",
+        "source": "ioffe.ru/SVA/NSM/Semicond/AlGaAs/",
+        "description": "Room temperature experimental measurements",
+        "recommended_for": ["device_engineering", "HEMT", "laser", "solar_cell"],
+        "advantages": [
+            "Accurate for real devices",
+            "Experimentally verified",
+            "Room temperature values"
+        ],
+        "limitations": [
+            "Limited temperature range",
+            "May not include all properties",
+            "No formation energy data"
+        ]
+    },
+    "mp_api": {
+        "name": "Materials Project DFT Calculations",
+        "source": "materialsproject.org",
+        "description": "DFT-GGA calculated properties at 0K",
+        "recommended_for": ["DFT_validation", "research", "comparative_studies"],
+        "advantages": [
+            "Complete property set",
+            "Thermodynamic stability data",
+            "Consistent computational method"
+        ],
+        "limitations": [
+            "Band gaps underestimated (30-50%)",
+            "0K calculations (not room temp)",
+            "DFT approximations",
+            "Requires scissor shift correction"
+        ]
+    }
+}
+
+
+# ============================================================================
+# MODULE METADATA
+# ============================================================================
+
+__version__ = "0.1.1"
+__author__ = "Abdullah Hasan Dafa"
+__description__ = "AlGaAs material properties with dual data source support"

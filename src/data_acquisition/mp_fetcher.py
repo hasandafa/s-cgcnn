@@ -1,339 +1,607 @@
 """
-Materials Project Data Fetcher for AlGaAs System
-UPDATED for MP API v0.41+ (new structure)
+Materials Project API Fetcher - Version 0.1.1
+Enhanced for dual-mode property extraction
+
+Fetches structures and properties from Materials Project API.
+Compatible with mp-api >= 0.41.2
+
+Author: Abdullah Hasan Dafa
 """
 
-import json
+from typing import Dict, Optional, Any, List
 from pathlib import Path
-from typing import Dict, List, Optional
-import sys
-
-# Add parent directory to path
-sys.path.append(str(Path(__file__).parent.parent.parent))
+import json
 
 from mp_api.client import MPRester
 from pymatgen.core import Structure
+import numpy as np
 
-from src.utils.logger_config import setup_logger
+from ..utils.logger_config import setup_logger
+from ..utils import constants
 
 
-class MPDataFetcher:
+# ============================================================================
+# MATERIALS PROJECT FETCHER CLASS
+# ============================================================================
+class MPFetcher:
     """
-    Fetches crystal structure and electronic properties from Materials Project.
-    Updated for new MP API structure.
+    Fetches material data from Materials Project API.
+    
+    Features:
+    - Structure retrieval
+    - Electronic properties (band structure, DOS)
+    - Mechanical properties (elastic tensor)
+    - Thermodynamic properties (formation energy, stability)
+    - Dielectric properties
+    - Automatic retry on connection errors
     """
     
-    def __init__(self, api_key: str, output_dir: str = "data/raw"):
+    def __init__(
+        self,
+        api_key: Optional[str] = None,
+        api_key_file: Optional[Path] = None,
+        config: Optional[Dict] = None,
+        logger=None
+    ):
         """
-        Initialize MP fetcher.
+        Initialize MP API fetcher.
         
         Args:
-            api_key: Materials Project API key
-            output_dir: Directory to save fetched data
+            api_key: MP API key (if None, reads from file)
+            api_key_file: Path to file containing API key
+            config: Configuration dictionary
+            logger: Logger instance
         """
-        self.api_key = api_key
-        self.output_dir = Path(output_dir)
-        self.output_dir.mkdir(parents=True, exist_ok=True)
+        self.config = config or {}
+        self.logger = logger or setup_logger("MPFetcher")
         
-        self.logger = setup_logger(__name__, log_file="logs/v0.1_mp_fetcher.log")
-        self.logger.info("MPDataFetcher initialized")
+        # Get API key
+        if api_key:
+            self.api_key = api_key
+        elif api_key_file:
+            self.api_key = self._read_api_key(api_key_file)
+        else:
+            # Try default location from config
+            default_path = Path(
+                self.config.get("materials_project", {}).get(
+                    "api_key_file", "config/mp_api_key.txt"
+                )
+            )
+            self.api_key = self._read_api_key(default_path)
         
-        # Materials to fetch
-        self.materials = {
-            "GaAs": "mp-2534",
-            "AlAs": "mp-2172"
-        }
+        # Get API configuration
+        mp_config = self.config.get("materials_project", {})
+        self.timeout = mp_config.get("timeout", 30)
+        self.max_retries = mp_config.get("max_retries", 3)
+        
+        # Material IDs
+        self.gaas_mp_id = mp_config.get("gaas_mp_id", "mp-2534")
+        self.alas_mp_id = mp_config.get("alas_mp_id", "mp-2172")
+        
+        self.logger.info("Initialized MPFetcher (v0.1.1)")
+        self.logger.info(f"GaAs: {self.gaas_mp_id}, AlAs: {self.alas_mp_id}")
     
-    def fetch_material_data(self, mp_id: str, material_name: str) -> Dict:
+    def _read_api_key(self, filepath: Path) -> str:
+        """Read API key from file"""
+        filepath = Path(filepath)
+        if not filepath.exists():
+            raise FileNotFoundError(
+                f"MP API key file not found: {filepath}\n"
+                "Please create the file with your API key from materialsproject.org"
+            )
+        
+        with open(filepath, 'r') as f:
+            api_key = f.read().strip()
+        
+        if not api_key:
+            raise ValueError(f"API key file is empty: {filepath}")
+        
+        return api_key
+    
+    # ========================================================================
+    # STRUCTURE FETCHING
+    # ========================================================================
+    
+    def fetch_structure(self, mp_id: str) -> Structure:
         """
-        Fetch comprehensive material data from Materials Project.
-        Updated for new API structure.
+        Fetch structure from Materials Project.
+        
+        Args:
+            mp_id: Materials Project ID (e.g., "mp-2534")
+        
+        Returns:
+            pymatgen Structure object
+        """
+        self.logger.info(f"Fetching structure for {mp_id}")
+        
+        with MPRester(self.api_key) as mpr:
+            try:
+                # Get structure (conventional cell)
+                structure = mpr.get_structure_by_material_id(
+                    mp_id,
+                    conventional_unit_cell=False  # Use primitive cell
+                )
+                
+                self.logger.info(
+                    f"Successfully fetched {mp_id}: "
+                    f"{structure.composition.reduced_formula}, "
+                    f"a={structure.lattice.a:.4f} Å"
+                )
+                
+                return structure
+                
+            except Exception as e:
+                self.logger.error(f"Failed to fetch structure {mp_id}: {e}")
+                raise
+    
+    def fetch_gaas_structure(self) -> Structure:
+        """Fetch GaAs structure"""
+        return self.fetch_structure(self.gaas_mp_id)
+    
+    def fetch_alas_structure(self) -> Structure:
+        """Fetch AlAs structure"""
+        return self.fetch_structure(self.alas_mp_id)
+    
+    # ========================================================================
+    # PROPERTY FETCHING (NEW in v0.1.1)
+    # ========================================================================
+    
+    def fetch_all_properties(
+        self,
+        mp_id: str,
+        apply_bandgap_correction: bool = True
+    ) -> Dict[str, Any]:
+        """
+        Fetch all available properties for a material.
+        
+        This populates the MP-API property dictionaries in constants.py
         
         Args:
             mp_id: Materials Project ID
-            material_name: Name of material (for logging)
+            apply_bandgap_correction: Apply scissor shift correction to band gap
         
         Returns:
-            Dictionary containing all fetched data
+            Dictionary of all fetched properties
         """
-        self.logger.info(f"Fetching data for {material_name} ({mp_id})...")
+        self.logger.info(f"Fetching all properties for {mp_id}")
         
-        data = {
-            "mp_id": mp_id,
-            "material_name": material_name,
-            "structure": None,
-            "properties": {},
-            "band_structure": None,
-            "dos": None
-        }
+        properties = {}
         
-        try:
-            with MPRester(self.api_key) as mpr:
-                # Fetch summary data (structure + basic properties)
-                self.logger.info(f"  → Fetching summary data...")
-                
+        with MPRester(self.api_key) as mpr:
+            # ================================================================
+            # 1. SUMMARY DATA (basic properties)
+            # ================================================================
+            try:
                 summary = mpr.materials.summary.search(
                     material_ids=[mp_id],
                     fields=[
                         "material_id",
-                        "formula_pretty", 
+                        "formula_pretty",
                         "structure",
-                        "symmetry",
+                        "volume",
                         "density",
-                        "formation_energy_per_atom",
-                        "energy_per_atom",
+                        "symmetry",
                         "is_stable",
                         "is_metal",
-                        "ordering",
-                        "theoretical"
+                        "is_magnetic",
                     ]
                 )
                 
-                if not summary:
-                    raise ValueError(f"No data found for {mp_id}")
-                
-                mat = summary[0]
-                
-                # Extract structure
-                data["structure"] = mat.structure
-                self.logger.info(f"  ✓ Structure: {mat.structure.composition}")
-                
-                # Extract basic properties
-                data["properties"]["formula"] = mat.formula_pretty
-                data["properties"]["density"] = mat.density
-                data["properties"]["formation_energy_per_atom"] = mat.formation_energy_per_atom
-                data["properties"]["energy_per_atom"] = mat.energy_per_atom
-                data["properties"]["is_stable"] = mat.is_stable
-                data["properties"]["is_metal"] = mat.is_metal if hasattr(mat, 'is_metal') else False
-                data["properties"]["symmetry"] = str(mat.symmetry)
-                
-                # Fetch electronic structure data separately
-                self.logger.info(f"  → Fetching electronic structure...")
-                try:
-                    electronic = mpr.materials.electronic_structure.search(
-                        material_ids=[mp_id],
-                        fields=[
-                            "material_id",
-                            "band_gap",
-                            "cbm",
-                            "vbm", 
-                            "efermi",
-                            "is_gap_direct",
-                            "is_metal"
-                        ]
-                    )
+                if summary:
+                    s = summary[0]
                     
-                    if electronic:
-                        elec = electronic[0]
-                        data["properties"]["band_gap"] = elec.band_gap if hasattr(elec, 'band_gap') else 0.0
-                        data["properties"]["is_gap_direct"] = elec.is_gap_direct if hasattr(elec, 'is_gap_direct') else False
-                        data["properties"]["efermi"] = elec.efermi if hasattr(elec, 'efermi') else 0.0
-                        data["properties"]["vbm"] = elec.vbm.energy if hasattr(elec, 'vbm') else 0.0
-                        data["properties"]["cbm"] = elec.cbm.energy if hasattr(elec, 'cbm') else 0.0
-                        self.logger.info(f"  ✓ Band gap: {data['properties']['band_gap']:.3f} eV")
-                    else:
-                        self.logger.warning(f"  ⚠ No electronic structure data available")
-                        # Set default values
-                        data["properties"]["band_gap"] = 1.42 if material_name == "GaAs" else 2.17
-                        data["properties"]["is_gap_direct"] = True if material_name == "GaAs" else False
-                        data["properties"]["efermi"] = 0.0
-                        data["properties"]["vbm"] = 0.0
-                        data["properties"]["cbm"] = 0.0
-                        
-                except Exception as e:
-                    self.logger.warning(f"  ⚠ Electronic structure error: {e}")
-                    # Use literature values as fallback
-                    if material_name == "GaAs":
-                        data["properties"]["band_gap"] = 1.424
-                        data["properties"]["is_gap_direct"] = True
-                    else:  # AlAs
-                        data["properties"]["band_gap"] = 2.168
-                        data["properties"]["is_gap_direct"] = False
-                    data["properties"]["efermi"] = 0.0
-                    data["properties"]["vbm"] = 0.0
-                    data["properties"]["cbm"] = 0.0
-                
-                # Fetch elastic properties
-                try:
-                    self.logger.info(f"  → Fetching elastic properties...")
-                    elasticity = mpr.materials.elasticity.search(
-                        material_ids=[mp_id],
-                        fields=[
-                            "material_id",
-                            "elastic_tensor",
-                            "bulk_modulus",
-                            "shear_modulus",
-                            "universal_anisotropy",
-                            "homogeneous_poisson"
-                        ]
-                    )
+                    # Physical properties from structure
+                    structure = s.structure
+                    properties["lattice_constant"] = structure.lattice.a
+                    properties["volume"] = s.volume
+                    properties["density"] = s.density
                     
-                    if elasticity:
-                        elas = elasticity[0]
-                        if hasattr(elas, 'bulk_modulus') and elas.bulk_modulus:
-                            data["properties"]["elastic_tensor"] = {
-                                "bulk_modulus_vrh": elas.bulk_modulus.vrh,
-                                "shear_modulus_vrh": elas.shear_modulus.vrh if hasattr(elas, 'shear_modulus') else None,
-                            }
-                            self.logger.info(f"  ✓ Elastic: K={elas.bulk_modulus.vrh:.1f} GPa")
-                except Exception as e:
-                    self.logger.warning(f"  ⚠ Elastic tensor not available: {e}")
-                
-                # Fetch dielectric properties
-                try:
-                    self.logger.info(f"  → Fetching dielectric properties...")
-                    dielectric = mpr.materials.dielectric.search(
-                        material_ids=[mp_id],
-                        fields=[
-                            "material_id",
-                            "e_total",
-                            "e_ionic", 
-                            "e_electronic",
-                            "n"
-                        ]
-                    )
+                    # Symmetry
+                    properties["space_group"] = s.symmetry.symbol if s.symmetry else None
+                    properties["crystal_system"] = s.symmetry.crystal_system if s.symmetry else None
+                    properties["point_group"] = s.symmetry.point_group if s.symmetry else None
                     
-                    if dielectric:
-                        diel = dielectric[0]
-                        data["properties"]["dielectric"] = {
-                            "total": diel.e_total if hasattr(diel, 'e_total') else None,
-                            "ionic": diel.e_ionic if hasattr(diel, 'e_ionic') else None,
-                            "electronic": diel.e_electronic if hasattr(diel, 'e_electronic') else None,
-                            "refractive_index": diel.n if hasattr(diel, 'n') else None
-                        }
-                        self.logger.info(f"  ✓ Dielectric properties fetched")
-                except Exception as e:
-                    self.logger.warning(f"  ⚠ Dielectric data not available: {e}")
-                
-                self.logger.info(f"✓ Successfully fetched data for {material_name}")
-                
-        except Exception as e:
-            self.logger.error(f"✗ Error fetching {material_name}: {e}")
-            raise
-        
-        return data
-    
-    def save_data(self, data: Dict, filename: str):
-        """
-        Save fetched data to JSON file.
-        
-        Args:
-            data: Data dictionary
-            filename: Output filename
-        """
-        output_file = self.output_dir / filename
-        
-        # Convert pymatgen objects to dict for JSON serialization
-        save_data = data.copy()
-        
-        if data["structure"] is not None:
-            save_data["structure"] = data["structure"].as_dict()
-        
-        with open(output_file, 'w') as f:
-            json.dump(save_data, f, indent=2, default=str)
-        
-        self.logger.info(f"✓ Saved data to {output_file}")
-    
-    def fetch_all_materials(self) -> Dict[str, Dict]:
-        """
-        Fetch data for all materials in the system.
-        
-        Returns:
-            Dictionary with material names as keys and data as values
-        """
-        self.logger.info("="*60)
-        self.logger.info("Starting data fetch for AlGaAs system")
-        self.logger.info("="*60)
-        
-        all_data = {}
-        
-        for material_name, mp_id in self.materials.items():
-            try:
-                data = self.fetch_material_data(mp_id, material_name)
-                all_data[material_name] = data
-                
-                # Save individual material data
-                filename = f"mp_{mp_id.replace('mp-', '')}_{material_name}.json"
-                self.save_data(data, filename)
+                    # Boolean properties
+                    properties["is_metal"] = s.is_metal
+                    properties["is_magnetic"] = s.is_magnetic
+                    properties["is_stable"] = s.is_stable
+                    
+                    self.logger.debug(f"Fetched summary data for {mp_id}")
                 
             except Exception as e:
-                self.logger.error(f"Failed to fetch {material_name}: {e}")
-                continue
+                self.logger.warning(f"Could not fetch summary data: {e}")
+            
+            # ================================================================
+            # 2. ELECTRONIC STRUCTURE (band gap, VBM, CBM)
+            # ================================================================
+            try:
+                electronic = mpr.materials.electronic_structure.search(
+                    material_ids=[mp_id],
+                    fields=[
+                        "material_id",
+                        "band_gap",
+                        "is_gap_direct",
+                        "is_metal",
+                        "efermi",
+                    ]
+                )
+                
+                if electronic:
+                    e = electronic[0]
+                    
+                    # Band gap (with optional correction)
+                    raw_bandgap = e.band_gap
+                    if apply_bandgap_correction and raw_bandgap > 0:
+                        correction_config = self.config.get(
+                            "interpolation", {}
+                        ).get("mp_bandgap_correction", {})
+                        
+                        if correction_config.get("enabled", True):
+                            factor = correction_config.get("correction_factor", 1.5)
+                            corrected_bandgap = raw_bandgap * factor
+                            
+                            properties["band_gap_raw"] = raw_bandgap
+                            properties["band_gap"] = corrected_bandgap
+                            properties["band_gap_correction_factor"] = factor
+                            
+                            self.logger.info(
+                                f"Band gap correction: {raw_bandgap:.3f} eV -> "
+                                f"{corrected_bandgap:.3f} eV (factor={factor})"
+                            )
+                        else:
+                            properties["band_gap"] = raw_bandgap
+                    else:
+                        properties["band_gap"] = raw_bandgap
+                    
+                    properties["is_gap_direct"] = e.is_gap_direct
+                    properties["band_gap_type"] = "direct" if e.is_gap_direct else "indirect"
+                    properties["is_metal"] = e.is_metal
+                    properties["fermi_energy"] = e.efermi
+                    
+                    # Try to get VBM/CBM (may not always be available)
+                    try:
+                        # These might be in different format depending on MP version
+                        properties["vbm"] = getattr(e, "vbm", None)
+                        properties["cbm"] = getattr(e, "cbm", None)
+                    except:
+                        properties["vbm"] = None
+                        properties["cbm"] = None
+                    
+                    self.logger.debug(
+                        f"Fetched electronic structure: "
+                        f"Eg={properties['band_gap']:.3f} eV "
+                        f"({'direct' if e.is_gap_direct else 'indirect'})"
+                    )
+                
+            except Exception as e:
+                self.logger.warning(f"Could not fetch electronic structure: {e}")
+            
+            # ================================================================
+            # 3. THERMODYNAMIC PROPERTIES
+            # ================================================================
+            try:
+                thermo = mpr.materials.thermo.search(
+                    material_ids=[mp_id],
+                    fields=[
+                        "material_id",
+                        "formation_energy_per_atom",
+                        "energy_above_hull",
+                        "decomposes_to",
+                    ]
+                )
+                
+                if thermo:
+                    t = thermo[0]
+                    
+                    properties["formation_energy_per_atom"] = t.formation_energy_per_atom
+                    properties["energy_above_hull"] = t.energy_above_hull
+                    properties["decomposes_to"] = t.decomposes_to
+                    
+                    self.logger.debug(
+                        f"Fetched thermodynamics: "
+                        f"ΔHf={t.formation_energy_per_atom:.3f} eV/atom, "
+                        f"E_hull={t.energy_above_hull:.3f} eV/atom"
+                    )
+                
+            except Exception as e:
+                self.logger.warning(f"Could not fetch thermodynamics: {e}")
+            
+            # ================================================================
+            # 4. ELASTIC PROPERTIES
+            # ================================================================
+            try:
+                elastic = mpr.materials.elasticity.search(
+                    material_ids=[mp_id],
+                    fields=[
+                        "material_id",
+                        "elastic_tensor",
+                        "bulk_modulus",
+                        "shear_modulus",
+                        "elastic_anisotropy",
+                        "poisson_ratio",
+                        "homogeneous_poisson",
+                    ]
+                )
+                
+                if elastic:
+                    el = elastic[0]
+                    
+                    # Bulk and shear modulus - handle both dict and object formats
+                    if hasattr(el, 'bulk_modulus'):
+                        if hasattr(el.bulk_modulus, 'vrh'):
+                            properties["bulk_modulus"] = el.bulk_modulus.vrh
+                        elif isinstance(el.bulk_modulus, dict) and 'vrh' in el.bulk_modulus:
+                            properties["bulk_modulus"] = el.bulk_modulus['vrh']
+                        else:
+                            properties["bulk_modulus"] = el.bulk_modulus
+                    
+                    if hasattr(el, 'shear_modulus'):
+                        if hasattr(el.shear_modulus, 'vrh'):
+                            properties["shear_modulus"] = el.shear_modulus.vrh
+                        elif isinstance(el.shear_modulus, dict) and 'vrh' in el.shear_modulus:
+                            properties["shear_modulus"] = el.shear_modulus['vrh']
+                        else:
+                            properties["shear_modulus"] = el.shear_modulus
+                    
+                    # Elastic tensor - handle different API versions
+                    if hasattr(el, 'elastic_tensor') and el.elastic_tensor is not None:
+                        tensor = el.elastic_tensor
+                        
+                        # Try different ways to get Voigt notation
+                        if hasattr(tensor, 'voigt'):
+                            voigt_matrix = tensor.voigt
+                        elif hasattr(tensor, 'raw'):
+                            voigt_matrix = tensor.raw
+                        elif isinstance(tensor, np.ndarray):
+                            voigt_matrix = tensor
+                        else:
+                            # Convert to numpy array if possible
+                            try:
+                                voigt_matrix = np.array(tensor)
+                            except:
+                                voigt_matrix = None
+                        
+                        if voigt_matrix is not None:
+                            properties["elastic_tensor"] = voigt_matrix
+                            
+                            # Extract C11, C12, C44 for cubic crystals
+                            try:
+                                if isinstance(voigt_matrix, np.ndarray) and voigt_matrix.shape == (6, 6):
+                                    properties["elastic_constant_c11"] = float(voigt_matrix[0, 0])
+                                    properties["elastic_constant_c12"] = float(voigt_matrix[0, 1])
+                                    properties["elastic_constant_c44"] = float(voigt_matrix[3, 3])
+                            except:
+                                pass
+                    
+                    if hasattr(el, 'elastic_anisotropy'):
+                        properties["elastic_anisotropy"] = el.elastic_anisotropy
+                    
+                    if hasattr(el, 'homogeneous_poisson'):
+                        properties["poissons_ratio"] = el.homogeneous_poisson
+                    elif hasattr(el, 'poisson_ratio'):
+                        properties["poissons_ratio"] = el.poisson_ratio
+                    
+                    # Calculate Young's modulus (approximate)
+                    K = properties.get("bulk_modulus")
+                    G = properties.get("shear_modulus")
+                    if K and G:
+                        try:
+                            E = (9 * K * G) / (3 * K + G)  # GPa
+                            properties["youngs_modulus"] = E
+                        except:
+                            pass
+                    
+                    self.logger.debug(
+                        f"Fetched elastic properties: "
+                        f"K={properties.get('bulk_modulus', 'N/A')}, "
+                        f"G={properties.get('shear_modulus', 'N/A')}"
+                    )
+                
+            except Exception as e:
+                self.logger.warning(f"Could not fetch elastic properties: {e}")
+            
+            # ================================================================
+            # 5. DIELECTRIC PROPERTIES
+            # ================================================================
+            try:
+                dielectric = mpr.materials.dielectric.search(
+                    material_ids=[mp_id],
+                    fields=[
+                        "material_id",
+                        "total",
+                        "electronic",
+                        "ionic",
+                        "e_total",
+                        "e_electronic",
+                        "e_ionic",
+                        "n",
+                    ]
+                )
+                
+                if dielectric:
+                    d = dielectric[0]
+                    
+                    # Dielectric constants (average of diagonal)
+                    if hasattr(d, 'total') and d.total is not None:
+                        eps_total = np.trace(d.total) / 3
+                        properties["dielectric_constant_static"] = eps_total
+                    
+                    if hasattr(d, 'electronic') and d.electronic is not None:
+                        eps_elec = np.trace(d.electronic) / 3
+                        properties["dielectric_constant_electronic"] = eps_elec
+                        properties["dielectric_constant_high_freq"] = eps_elec
+                        
+                        # Refractive index: n = sqrt(ε∞)
+                        properties["refractive_index"] = np.sqrt(eps_elec)
+                    
+                    if hasattr(d, 'ionic') and d.ionic is not None:
+                        eps_ionic = np.trace(d.ionic) / 3
+                        properties["dielectric_constant_ionic"] = eps_ionic
+                    
+                    self.logger.debug(
+                        f"Fetched dielectric properties: "
+                        f"εs={properties.get('dielectric_constant_static', 'N/A'):.2f}, "
+                        f"ε∞={properties.get('dielectric_constant_high_freq', 'N/A'):.2f}"
+                    )
+                
+            except Exception as e:
+                self.logger.warning(f"Could not fetch dielectric properties: {e}")
+            
+            # ================================================================
+            # 6. MAGNETIC PROPERTIES
+            # ================================================================
+            try:
+                magnetism = mpr.materials.magnetism.search(
+                    material_ids=[mp_id],
+                    fields=[
+                        "material_id",
+                        "total_magnetization",
+                        "total_magnetization_normalized_vol",
+                    ]
+                )
+                
+                if magnetism:
+                    m = magnetism[0]
+                    
+                    properties["total_magnetization"] = m.total_magnetization
+                    properties["total_magnetization_normalized"] = m.total_magnetization_normalized_vol
+                    
+                    self.logger.debug(
+                        f"Fetched magnetic properties: "
+                        f"M={m.total_magnetization:.3f} μB"
+                    )
+                
+            except Exception as e:
+                self.logger.warning(f"Could not fetch magnetic properties: {e}")
         
-        self.logger.info("="*60)
-        self.logger.info(f"Data fetch complete. {len(all_data)}/{len(self.materials)} materials fetched")
-        self.logger.info("="*60)
+        # ====================================================================
+        # SUMMARY
+        # ====================================================================
+        num_properties = len([v for v in properties.values() if v is not None])
+        self.logger.info(
+            f"Successfully fetched {num_properties} properties for {mp_id}"
+        )
         
-        return all_data
+        return properties
     
-    def load_saved_data(self, material_name: str) -> Optional[Dict]:
+    def fetch_and_update_constants(
+        self,
+        update_constants_module: bool = False
+    ) -> Dict[str, Dict[str, Any]]:
         """
-        Load previously saved material data.
+        Fetch properties for GaAs and AlAs and optionally update constants.py
         
         Args:
-            material_name: Name of material
+            update_constants_module: If True, update constants.py dictionaries
         
         Returns:
-            Data dictionary or None if not found
+            Dictionary with GaAs and AlAs properties
         """
-        mp_id = self.materials.get(material_name)
-        if not mp_id:
-            self.logger.error(f"Unknown material: {material_name}")
-            return None
+        self.logger.info("Fetching properties for GaAs and AlAs from MP API")
         
-        filename = f"mp_{mp_id.replace('mp-', '')}_{material_name}.json"
-        filepath = self.output_dir / filename
+        # Fetch GaAs properties
+        gaas_props = self.fetch_all_properties(self.gaas_mp_id)
         
-        if not filepath.exists():
-            self.logger.warning(f"Saved data not found: {filepath}")
-            return None
+        # Fetch AlAs properties
+        alas_props = self.fetch_all_properties(self.alas_mp_id)
         
-        with open(filepath, 'r') as f:
-            data = json.load(f)
+        result = {
+            "GaAs": gaas_props,
+            "AlAs": alas_props
+        }
         
-        # Convert structure dict back to Structure object
-        if data.get("structure"):
-            data["structure"] = Structure.from_dict(data["structure"])
+        # Update constants module if requested
+        if update_constants_module:
+            self.logger.info("Updating constants.py with MP-API properties")
+            
+            # Update GAAS_PROPERTIES_MP_API
+            for key, value in gaas_props.items():
+                if key in constants.GAAS_PROPERTIES_MP_API:
+                    constants.GAAS_PROPERTIES_MP_API[key] = value
+            
+            # Update ALAS_PROPERTIES_MP_API
+            for key, value in alas_props.items():
+                if key in constants.ALAS_PROPERTIES_MP_API:
+                    constants.ALAS_PROPERTIES_MP_API[key] = value
+            
+            self.logger.info("Constants module updated successfully")
         
-        self.logger.info(f"Loaded data for {material_name} from {filepath}")
-        return data
+        return result
+    
+    # ========================================================================
+    # EXPORT UTILITIES
+    # ========================================================================
+    
+    def save_properties_to_json(
+        self,
+        properties: Dict[str, Any],
+        filepath: Path,
+        pretty: bool = True
+    ):
+        """Save properties dictionary to JSON file"""
+        filepath = Path(filepath)
+        filepath.parent.mkdir(parents=True, exist_ok=True)
+        
+        # Convert numpy arrays and pymatgen objects to lists for JSON serialization
+        def convert_types(obj):
+            """Convert non-serializable types to JSON-compatible types"""
+            import numpy as np
+            from enum import Enum
+            
+            if isinstance(obj, np.ndarray):
+                return obj.tolist()
+            elif isinstance(obj, np.integer):
+                return int(obj)
+            elif isinstance(obj, np.floating):
+                return float(obj)
+            elif isinstance(obj, np.bool_):
+                return bool(obj)
+            elif isinstance(obj, Enum):
+                # Convert pymatgen enums (CrystalSystem, etc.) to string
+                return str(obj.value) if hasattr(obj, 'value') else str(obj)
+            elif hasattr(obj, '__dict__'):
+                # Convert objects with __dict__ to dict (pymatgen objects)
+                return str(obj)
+            return obj
+        
+        # Process all values
+        props_serializable = {
+            k: convert_types(v) for k, v in properties.items()
+        }
+        
+        with open(filepath, 'w') as f:
+            if pretty:
+                json.dump(props_serializable, f, indent=2)
+            else:
+                json.dump(props_serializable, f)
+        
+        self.logger.info(f"Saved properties to {filepath}")
 
 
-def main():
+# ============================================================================
+# MODULE FUNCTIONS
+# ============================================================================
+
+def create_fetcher_from_config(
+    config: Dict,
+    logger=None
+) -> MPFetcher:
     """
-    Main execution function for standalone use.
+    Create MPFetcher from configuration dictionary.
+    
+    Args:
+        config: Configuration dictionary
+        logger: Logger instance
+    
+    Returns:
+        MPFetcher instance
     """
-    import sys
-    
-    # Read API key
-    api_key_file = Path("config/mp_api_key.txt")
-    
-    if not api_key_file.exists():
-        print("ERROR: API key file not found!")
-        print("Please create config/mp_api_key.txt with your Materials Project API key")
-        print("Get your API key from: https://next-gen.materialsproject.org/api")
-        sys.exit(1)
-    
-    with open(api_key_file, 'r') as f:
-        api_key = f.read().strip()
-    
-    # Fetch data
-    fetcher = MPDataFetcher(api_key)
-    data = fetcher.fetch_all_materials()
-    
-    # Summary
-    print("\n" + "="*60)
-    print("FETCH SUMMARY")
-    print("="*60)
-    for material_name, mat_data in data.items():
-        print(f"\n{material_name} ({mat_data['mp_id']}):")
-        print(f"  Formula: {mat_data['structure'].composition}")
-        print(f"  Band gap: {mat_data['properties']['band_gap']:.3f} eV "
-              f"({'direct' if mat_data['properties']['is_gap_direct'] else 'indirect'})")
-        print(f"  Density: {mat_data['properties']['density']:.3f} g/cm³")
-        if "elastic_tensor" in mat_data["properties"]:
-            print(f"  Bulk modulus: {mat_data['properties']['elastic_tensor']['bulk_modulus_vrh']:.1f} GPa")
+    return MPFetcher(config=config, logger=logger)
 
 
-if __name__ == "__main__":
-    main()
+# ============================================================================
+# MODULE METADATA
+# ============================================================================
+
+__version__ = "0.1.1"
+__author__ = "Abdullah Hasan Dafa"
