@@ -1,379 +1,637 @@
-# 🌳 Git Workflow Guide - s-CGCNN
+# Git Workflow for s-CGCNN Project
 
-Systematic branching strategy for version development.
+**Version Control Strategy for s-CGCNN Development**
 
----
-
-## 📋 Branch Structure
-
-```
-master (main)          ← Always stable, reflects latest version
-  │
-  ├── version-0.1      ← Data Acquisition & Interpolation
-  │
-  ├── version-0.2      ← Structure Visualization
-  │
-  ├── version-0.3      ← Graph Building & Properties
-  │
-  ├── version-0.4      ← s-CGCNN Model & Training
-  │
-  ├── version-0.5      ← BS/DOS Prediction & Visualization
-  │
-  └── version-1.0      ← Device Recommendation (Stable Release)
-```
+Author: Abdullah Hasan Dafa  
+Project: s-CGCNN (Simplified CGCNN for AlGaAs Alloys)
 
 ---
 
-## 🚀 Initial Setup (Version 0.1)
+## 📋 Overview
 
-### 1. Create Repository on GitHub
+This document describes the Git branching strategy and workflow for s-CGCNN project development.
 
-```bash
-# On GitHub: Create new repository 's-cgcnn'
-# Check: Initialize with README (NO - we have our own)
-# Add .gitignore: Python
-# License: Your choice (e.g., MIT)
-```
-
-### 2. Initialize Local Repository
-
-```bash
-# Navigate to your s-cgcnn directory
-cd s-cgcnn
-
-# Initialize git
-git init
-
-# Add remote
-git remote add origin https://github.com/hasandafa/s-cgcnn.git
-```
-
-### 3. Create Directory Structure with Placeholders
-
-```bash
-# Create .gitkeep files for empty directories
-touch data/raw/.gitkeep
-touch data/structures/cif/.gitkeep
-touch data/structures/metadata/.gitkeep
-touch data/graphs/.gitkeep
-touch data/processed/.gitkeep
-touch logs/.gitkeep
-touch models/.gitkeep
-touch results/figures/.gitkeep
-touch results/models/.gitkeep
-touch results/predictions/.gitkeep
-touch results/recommendations/.gitkeep
-touch notebooks/.gitkeep
-touch tests/.gitkeep
-```
-
-### 4. Initial Commit to Master
-
-```bash
-# Add all files EXCEPT data/logs content
-git add .
-git add .gitignore
-git add requirements.txt
-git add README_v0.1.md
-git add QUICKSTART.md
-git add setup.py
-git add src/
-git add config/config_v0.1.yaml
-git add "1. Data Acquisition and Structure Interpolation Testing.py"
-git add run_version_0.1.py
-
-# IMPORTANT: Do NOT add config/mp_api_key.txt
-# Verify with:
-git status
-
-# Commit
-git commit -m "Initial commit: Project structure and documentation"
-
-# Push to master
-git branch -M master
-git push -u origin master
-```
+### **Branch Structure:**
+- `master` - Stable releases only
+- `v0.1.1`, `v0.2.0`, etc. - Version development branches
+- `feature/*` - Individual feature branches (optional)
 
 ---
 
-## 🔀 Version 0.1 Development
+## 🌳 Branching Strategy
 
-### 1. Create Version 0.1 Branch
+### **Main Branch: `master`**
 
-```bash
-# Create and switch to version-0.1 branch
-git checkout -b version-0.1
+**Purpose:** Production-ready code only  
+**Protection:** Stable, tested releases
 
-# Verify you're on the right branch
-git branch
-# Output should show: * version-0.1
+**Rules:**
+- ✅ Only merge from version branches (e.g., `v0.1.1`)
+- ✅ Each merge represents a complete, tested version
+- ✅ Tagged with version numbers (e.g., `v0.1.1`)
+- ❌ Never commit directly to master
+- ❌ Never push untested code to master
+
+**Content:**
+- Stable, production-ready code
+- Complete documentation
+- All tests passing
+- Ready for users to clone and use
+
+---
+
+### **Version Branches: `v0.1.1`, `v0.2.0`, etc.**
+
+**Purpose:** Development of specific versions  
+**Lifecycle:** Created for each new version, merged to master when complete
+
+**Naming Convention:**
+```
+v<MAJOR>.<MINOR>.<PATCH>
+
+Examples:
+- v0.1.0  (initial release)
+- v0.1.1  (patch release - bug fixes, minor features)
+- v0.2.0  (minor release - new features)
+- v1.0.0  (major release - stable)
 ```
 
-### 2. Development Workflow
+**Rules:**
+- ✅ Branch from master for new versions
+- ✅ All development happens here
+- ✅ Commit frequently with clear messages
+- ✅ Merge to master only when version is complete
+- ✅ Delete after successful merge to master (optional)
+
+---
+
+## 🚀 Workflow for Version 0.1.1
+
+### **Step 1: Create Version Branch**
 
 ```bash
-# Make changes, test, iterate...
+# Start from master
+git checkout master
+git pull origin master
 
-# Stage changes
-git add src/data_acquisition/mp_fetcher.py
-git add src/data_acquisition/structure_interpolator.py
-git add src/utils/constants.py
-git add src/utils/logger_config.py
-
-# Commit with descriptive message
-git commit -m "feat: Implement MP data fetcher and structure interpolator
-
-- Add MPDataFetcher for Materials Project API integration
-- Implement ordered supercell interpolation
-- Add Vegard's Law with bowing parameters
-- Include comprehensive property calculation
-- Add logging and error handling"
+# Create new version branch
+git checkout -b v0.1.1
 
 # Push to remote
-git push -u origin version-0.1
+git push -u origin v0.1.1
 ```
 
-### 3. Testing & Validation
+---
+
+### **Step 2: Development on v0.1.1 Branch**
+
+Work on all files for v0.1.1:
 
 ```bash
-# Run tests
-python "1. Data Acquisition and Structure Interpolation Testing.py"
+# Make sure you're on v0.1.1 branch
+git checkout v0.1.1
 
-# If tests pass, commit test results
-git add logs/v0.1_test_report.json
-git commit -m "test: Add v0.1 validation results"
-git push
+# Stage all new/modified files
+git add .
+
+# Or stage specific files
+git add config/config_v0.1.1.yaml
+git add src/utils/constants.py
+git add run_version_0.1.1.py
+
+# Commit with descriptive message
+git commit -m "feat: Add dual data source support (literature + MP-API)"
+
+# Push to v0.1.1 branch
+git push origin v0.1.1
 ```
 
-### 4. Merge to Master (When Complete)
+**Commit Message Guidelines:**
+```
+feat: Add new feature
+fix: Bug fix
+docs: Documentation changes
+refactor: Code refactoring
+test: Add or update tests
+chore: Maintenance tasks
+
+Examples:
+- feat: Add MP-API integration with band gap correction
+- fix: Correct composition rounding for discrete values
+- docs: Update README with dual mode usage examples
+- test: Add tests for literature vs MP-API comparison
+```
+
+---
+
+### **Step 3: Regular Commits During Development**
+
+Commit frequently as you work:
+
+```bash
+# After creating core files (BATCH 1)
+git add config/ src/ run_version_0.1.1.py
+git commit -m "feat: Core infrastructure for v0.1.1 dual source"
+git push origin v0.1.1
+
+# After creating tests
+git add tests/
+git commit -m "test: Add comprehensive test suite for v0.1.1"
+git push origin v0.1.1
+
+# After creating documentation
+git add README_v0.1.1.md CHANGELOG.md
+git commit -m "docs: Complete documentation for v0.1.1"
+git push origin v0.1.1
+
+# After creating BATCH 2 files
+git add src/utils/ notebooks/ examples/
+git commit -m "feat: Add utilities, notebooks, and examples"
+git push origin v0.1.1
+```
+
+---
+
+### **Step 4: Testing Phase**
+
+Before merging to master, ensure everything works:
+
+```bash
+# Run all tests
+python tests/1.1\ Adding\ Interpolation\ Source\ Selection.py
+
+# Check requirements
+python check_requirements.py
+
+# Test pipeline
+python run_version_0.1.1.py --mode literature
+
+# Test comparison mode
+python run_comparison_mode.py
+
+# If tests pass, commit final changes
+git add .
+git commit -m "test: All tests passing for v0.1.1"
+git push origin v0.1.1
+```
+
+---
+
+### **Step 5: Merge to Master (Complete Version)**
+
+When v0.1.1 is complete and tested:
 
 ```bash
 # Switch to master
 git checkout master
+git pull origin master
 
-# Merge version-0.1
-git merge version-0.1 --no-ff -m "Merge version-0.1: Complete data acquisition and interpolation
+# Merge v0.1.1 into master
+git merge v0.1.1 --no-ff -m "Release v0.1.1: Dual data source support"
 
-Version 0.1 Features:
-- Materials Project API integration
-- 41 AlGaAs structure generation
-- Property interpolation with bowing
-- Comprehensive testing suite"
+# Tag the release
+git tag -a v0.1.1 -m "Version 0.1.1 - Dual data source (literature + MP-API)"
 
-# Push updated master
+# Push master and tags
 git push origin master
+git push origin v0.1.1  # Keep version branch for reference
 
-# Tag the version
-git tag -a v0.1.0 -m "Version 0.1.0: Data Acquisition & Structure Interpolation"
-git push origin v0.1.0
+# Push tags
+git push origin --tags
 ```
+
+**Result:**
+- Master now has stable v0.1.1
+- Version branch v0.1.1 preserved for reference
+- Release tagged as v0.1.1
 
 ---
 
-## 🔄 Subsequent Versions (0.2, 0.3, etc.)
+### **Step 6: Continue Development (v0.2.0)**
 
-### Starting Version 0.2
+For next version:
 
 ```bash
-# Create from latest master
+# Start from master (which now has v0.1.1)
 git checkout master
 git pull origin master
 
-# Create version-0.2 branch
-git checkout -b version-0.2
+# Create v0.2.0 branch
+git checkout -b v0.2.0
+git push -u origin v0.2.0
 
-# Start development...
-```
-
-### Incremental Commits
-
-```bash
-# Good commit message format:
-# <type>: <short description>
-#
-# [optional body]
-# [optional footer]
-
-# Types:
-# feat:     New feature
-# fix:      Bug fix
-# docs:     Documentation only
-# style:    Formatting, missing semicolons, etc.
-# refactor: Code restructuring
-# test:     Adding tests
-# chore:    Maintain
-
-# Examples:
-git commit -m "feat: Add crystal-toolkit visualization"
-git commit -m "fix: Correct lattice parameter calculation"
-git commit -m "docs: Update README with visualization guide"
-git commit -m "test: Add visualization validation tests"
+# Start developing v0.2.0 features...
 ```
 
 ---
 
-## 🔙 Rollback Strategy
+## 📊 Branch Timeline Example
 
-### If Version 0.3 Has Issues
-
-```bash
-# Option 1: Start fresh from version-0.2
-git checkout version-0.2
-git checkout -b version-0.3-v2
-
-# Option 2: Reset version-0.3 to version-0.2
-git checkout version-0.3
-git reset --hard version-0.2
-# Force push (BE CAREFUL!)
-git push --force origin version-0.3
+```
+master:     v0.1.0 -----(merge)-----> v0.1.1 -----(merge)-----> v0.2.0
+                           ↑                          ↑
+v0.1.1:            [dev... dev... dev... test]       |
+                                                      |
+v0.2.0:                                      [dev... dev... dev... test]
 ```
 
-### If Master Has Issues
+---
+
+## 🔄 Complete Git Command Cheatsheet
+
+### **Initial Setup (One-time)**
 
 ```bash
-# Revert to last good version tag
+# Configure Git (if not done)
+git config --global user.name "Abdullah Hasan Dafa"
+git config --global user.email "your.email@example.com"
+
+# Clone repository
+git clone https://github.com/hasandafa/s-cgcnn.git
+cd s-cgcnn
+```
+
+---
+
+### **Starting New Version**
+
+```bash
+# Create version branch
 git checkout master
-git reset --hard v0.2.0
-git push --force origin master  # Use with EXTREME caution
+git pull origin master
+git checkout -b v0.1.1
+git push -u origin v0.1.1
 ```
 
 ---
 
-## 📊 Branch Status Overview
+### **Daily Development**
 
 ```bash
-# View all branches
-git branch -a
+# Check status
+git status
 
-# View branch history
-git log --oneline --graph --all --decorate
+# See what changed
+git diff
 
-# Compare branches
-git diff version-0.1..version-0.2
+# Stage files
+git add <file>              # Specific file
+git add .                   # All files
+git add -u                  # Updated files only
+
+# Commit
+git commit -m "message"
+
+# Push to version branch
+git push origin v0.1.1
+```
+
+---
+
+### **Viewing History**
+
+```bash
+# View commit log
+git log
+
+# View compact log
+git log --oneline
+
+# View branch graph
+git log --graph --oneline --all
+
+# View file history
+git log --follow <filename>
+```
+
+---
+
+### **Undoing Changes**
+
+```bash
+# Discard changes in working directory
+git checkout -- <file>
+
+# Unstage file (keep changes)
+git reset HEAD <file>
+
+# Undo last commit (keep changes)
+git reset --soft HEAD~1
+
+# Undo last commit (discard changes)
+git reset --hard HEAD~1
+```
+
+---
+
+### **Merging to Master**
+
+```bash
+# Switch to master
+git checkout master
+git pull origin master
+
+# Merge version branch
+git merge v0.1.1 --no-ff
+
+# Tag release
+git tag -a v0.1.1 -m "Version 0.1.1"
+
+# Push everything
+git push origin master
+git push origin --tags
+```
+
+---
+
+## 📝 Commit Message Standards
+
+### **Format:**
+```
+<type>: <subject>
+
+<optional body>
+
+<optional footer>
+```
+
+### **Types:**
+- `feat` - New feature
+- `fix` - Bug fix
+- `docs` - Documentation only
+- `style` - Formatting, missing semicolons, etc.
+- `refactor` - Code restructuring
+- `test` - Adding tests
+- `chore` - Maintenance
+
+### **Examples:**
+
+**Good commit messages:**
+```bash
+feat: Add MP-API data source with fallback to literature
+fix: Correct band gap correction factor calculation
+docs: Update README with comparison mode examples
+test: Add unit tests for structure interpolation
+refactor: Simplify property calculation logic
+chore: Update dependencies in requirements.txt
+```
+
+**Bad commit messages:**
+```bash
+update files          # Too vague
+fixed stuff           # No context
+WIP                   # Work in progress, not descriptive
+asdf                  # Meaningless
 ```
 
 ---
 
 ## 🏷️ Tagging Strategy
 
+### **Version Tags:**
+
 ```bash
-# Version tags
-v0.1.0  → First working version of 0.1
-v0.1.1  → Bug fix for 0.1
-v0.2.0  → First working version of 0.2
-v1.0.0  → Stable release
+# Create annotated tag
+git tag -a v0.1.1 -m "Version 0.1.1: Dual data source support"
 
-# Create tag
-git tag -a v0.1.0 -m "Version 0.1.0: Description"
+# Push tag to remote
+git push origin v0.1.1
 
-# Push tags
-git push origin v0.1.0
-# or push all tags
-git push --tags
+# Push all tags
+git push origin --tags
+
+# List all tags
+git tag -l
+
+# Delete tag (if needed)
+git tag -d v0.1.1
+git push origin :refs/tags/v0.1.1
+```
+
+### **Tag Naming:**
+- Use semantic versioning: `v<MAJOR>.<MINOR>.<PATCH>`
+- `v0.1.1` - Patch release
+- `v0.2.0` - Minor release
+- `v1.0.0` - Major release
+
+---
+
+## 🚫 Common Mistakes to Avoid
+
+### **❌ DON'T:**
+1. Commit directly to master
+2. Push broken code to any branch
+3. Use vague commit messages
+4. Forget to pull before pushing
+5. Commit large binary files
+6. Commit sensitive data (API keys, passwords)
+
+### **✅ DO:**
+1. Always work on version branches
+2. Test before committing
+3. Write clear commit messages
+4. Pull frequently to avoid conflicts
+5. Use .gitignore for generated files
+6. Keep API keys in .gitignore files
+
+---
+
+## 📂 .gitignore Recommendations
+
+Create/update `.gitignore`:
+
+```gitignore
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+venv/
+env/
+*.egg-info/
+
+# Jupyter
+.ipynb_checkpoints/
+*.ipynb_checkpoints
+
+# Data files (large)
+data/
+*.cif
+*.json  # Except config files
+
+# Logs
+logs/
+*.log
+
+# API Keys
+config/mp_api_key.txt
+
+# OS
+.DS_Store
+Thumbs.db
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Results (generated)
+results/
+*.png
+*.pdf
 ```
 
 ---
 
-## 🔒 .gitignore Best Practices
+## 🔍 Checking Branch Status
 
-**Always exclude:**
-- ✅ `config/mp_api_key.txt` (API keys)
-- ✅ `data/raw/*.json` (Large data files)
-- ✅ `data/structures/cif/*.cif` (Generated structures)
-- ✅ `logs/*.log` (Log files)
-- ✅ `models/*.pt` (Trained models)
-- ✅ `__pycache__/` (Python cache)
-- ✅ `venv/` (Virtual environment)
-
-**Keep in Git:**
-- ✅ `.gitkeep` files (directory structure)
-- ✅ `config/config_*.yaml` (Configuration templates)
-- ✅ Source code (`src/`)
-- ✅ Documentation (`.md` files)
-- ✅ Requirements (`requirements.txt`)
-- ✅ Tests (`tests/`, `*.py` test files)
-
----
-
-## 📝 Commit Message Template
-
-Create `.gitmessage` template:
-
+### **View all branches:**
 ```bash
-cat > .gitmessage << 'EOF'
-# Type: feat|fix|docs|style|refactor|test|chore
-# Scope: component affected (optional)
-#
-# Subject: imperative mood, max 50 chars
-#
-# Body: Explain WHAT and WHY (not HOW)
-# - Bullet points okay
-# - Reference issues: Closes #123
-#
-# Footer: Breaking changes, issues
-EOF
+# Local branches
+git branch
 
-# Set as default
-git config commit.template .gitmessage
+# Remote branches
+git branch -r
+
+# All branches
+git branch -a
+
+# Current branch
+git branch --show-current
+```
+
+### **Switch branches:**
+```bash
+# Switch to existing branch
+git checkout v0.1.1
+
+# Create and switch to new branch
+git checkout -b v0.2.0
 ```
 
 ---
 
-## 🚨 Emergency Procedures
+## 🆘 Troubleshooting
 
-### Accidentally Committed API Key
+### **Problem: Merge conflict**
 
 ```bash
-# Remove from last commit
-git rm --cached config/mp_api_key.txt
-git commit --amend
+# During merge, Git will show conflicts
+git merge v0.1.1
 
-# If already pushed
-git push --force
+# Edit conflicted files manually
+# Look for <<<<<<< HEAD markers
 
-# Regenerate API key immediately!
+# After resolving conflicts
+git add <resolved_files>
+git commit -m "Merge v0.1.1 into master"
 ```
 
-### Accidentally Committed Large File
+### **Problem: Pushed wrong commit**
 
 ```bash
-# Remove from git history (careful!)
-git filter-branch --tree-filter 'rm -f data/large_file.dat' HEAD
-git push --force
+# Undo last commit on remote (DANGEROUS!)
+git reset --hard HEAD~1
+git push origin v0.1.1 --force
+
+# Better: Revert the commit (creates new commit)
+git revert HEAD
+git push origin v0.1.1
+```
+
+### **Problem: Forgot to create branch**
+
+```bash
+# Currently on master, made changes
+git status  # Shows uncommitted changes
+
+# Create branch now
+git checkout -b v0.1.1
+
+# Changes come with you to new branch
+git add .
+git commit -m "feat: Add new features"
+git push -u origin v0.1.1
 ```
 
 ---
 
-## ✅ Pre-Push Checklist
+## 📊 Example: Complete v0.1.1 Workflow
 
-Before pushing to master:
+```bash
+# 1. Start new version
+git checkout master
+git pull origin master
+git checkout -b v0.1.1
+git push -u origin v0.1.1
 
-- [ ] All tests pass
-- [ ] No API keys in commits
-- [ ] Documentation updated
-- [ ] Changelog/version updated
-- [ ] No merge conflicts
-- [ ] Code linted/formatted
+# 2. Create BATCH 1 files
+# ... create files ...
+git add .
+git commit -m "feat: Core v0.1.1 infrastructure (BATCH 1)"
+git push origin v0.1.1
+
+# 3. Create BATCH 2 files
+# ... create files ...
+git add .
+git commit -m "feat: Utilities, notebooks, examples (BATCH 2)"
+git push origin v0.1.1
+
+# 4. Test everything
+python check_requirements.py
+python tests/1.1\ Adding\ Interpolation\ Source\ Selection.py
+git add .
+git commit -m "test: All tests passing"
+git push origin v0.1.1
+
+# 5. Update documentation
+git add README_v0.1.1.md CHANGELOG.md
+git commit -m "docs: Final documentation updates"
+git push origin v0.1.1
+
+# 6. Merge to master
+git checkout master
+git pull origin master
+git merge v0.1.1 --no-ff -m "Release v0.1.1"
+git tag -a v0.1.1 -m "Version 0.1.1: Dual data source support"
+git push origin master
+git push origin --tags
+
+# 7. Done! v0.1.1 is now in master
+```
+
+---
+
+## 🎓 Best Practices Summary
+
+1. **Always branch** from master for new versions
+2. **Commit often** with clear messages
+3. **Test before merging** to master
+4. **Tag releases** with version numbers
+5. **Document changes** in CHANGELOG.md
+6. **Use .gitignore** for generated/sensitive files
+7. **Pull frequently** to stay updated
+8. **Never commit** directly to master
 
 ---
 
 ## 📞 Need Help?
 
-```bash
-# Show git help
-git help <command>
+**Git Documentation:**
+- https://git-scm.com/doc
+- https://training.github.com/
 
-# Show commit history
-git log --oneline --graph
-
-# Show changes
-git diff
-
-# Show branch info
-git branch -vv
-```
+**Common Commands:**
+- `git status` - Check what's changed
+- `git log` - View history
+- `git diff` - See differences
+- `git help <command>` - Get help
 
 ---
 
-**Last Updated:** October 2025  
-**Version:** 0.1.0
+**Happy Coding with Proper Version Control!** 🚀
+
+*Last updated: 2025-Q4 (v0.1.1)*  
+*Author: Abdullah Hasan Dafa*

@@ -1,0 +1,208 @@
+# s-CGCNN Configuration File - Version 0.1.1
+# Enhanced with dual interpolation mode: Literature vs MP-API
+
+version: "0.1.1"
+project_name: "s-CGCNN"
+description: "Simplified CGCNN for AlGaAs semiconductor alloys"
+
+# ============================================================================
+# INTERPOLATION MODE SELECTION
+# ============================================================================
+interpolation:
+  # Mode options: "literature" or "mp_api"
+  # - "literature": Use experimental values from ioffe.ru (recommended for device engineering)
+  # - "mp_api": Use DFT-calculated values from Materials Project (for DFT validation studies)
+  mode: "literature"  # Default: literature-based
+  
+  # Property sources priority (when mode="mp_api")
+  mp_api_fallback_to_literature: true  # If MP data unavailable, use literature values
+  
+  # Band gap correction for MP-API mode
+  # DFT-GGA typically underestimates by 30-50%, apply correction factor
+  mp_bandgap_correction:
+    enabled: true
+    method: "scissor_shift"  # Options: "scissor_shift", "gw_approximation", "none"
+    correction_factor: 1.5  # Multiply MP band gap by this factor (scissor operator)
+
+# ============================================================================
+# MATERIALS PROJECT API
+# ============================================================================
+materials_project:
+  api_key_file: "config/mp_api_key.txt"
+  
+  # Endpoint materials
+  gaas_mp_id: "mp-2534"
+  alas_mp_id: "mp-2172"
+  
+  # API request settings
+  timeout: 30  # seconds
+  max_retries: 3
+  
+  # Properties to fetch from MP (when mode="mp_api")
+  properties_to_fetch:
+    - "band_gap"
+    - "formation_energy_per_atom"
+    - "energy_above_hull"
+    - "bulk_modulus"
+    - "shear_modulus"
+    - "elastic_tensor"
+    - "dielectric_constant"
+    - "refractive_index"
+    - "density"
+    - "volume"
+    - "total_magnetization"
+
+# ============================================================================
+# STRUCTURE INTERPOLATION
+# ============================================================================
+structure_interpolation:
+  # Supercell size for interpolation
+  supercell_size: [2, 2, 2]  # 8 atoms total (8 Ga sites for substitution)
+  
+  # Composition range
+  composition:
+    x_min: 0.0      # Pure GaAs
+    x_max: 1.0      # Pure AlAs
+    x_step: 0.025   # 41 compositions total
+  
+  # Structure generation
+  output_format: ["cif", "json"]  # Available: "cif", "json", "vasp", "xyz"
+  include_metadata: true
+
+# ============================================================================
+# PROPERTY CALCULATION
+# ============================================================================
+property_calculation:
+  # Vegard's Law with bowing parameters
+  use_bowing_parameters: true
+  
+  # Properties to calculate (both modes)
+  properties:
+    physical:
+      - "lattice_constant"
+      - "density"
+      - "thermal_expansion"
+    
+    electronic:
+      - "band_gap"
+      - "band_gap_type"  # direct/indirect
+      - "electron_affinity"
+      - "effective_mass_electron"
+      - "effective_mass_hole_heavy"
+      - "effective_mass_hole_light"
+      - "effective_mass_hole_split_off"
+    
+    optical:
+      - "dielectric_constant_static"
+      - "dielectric_constant_high_freq"
+      - "refractive_index"
+    
+    mechanical:
+      - "elastic_constant_c11"
+      - "elastic_constant_c12"
+      - "elastic_constant_c44"
+      - "bulk_modulus"
+      - "shear_modulus"
+      - "youngs_modulus"
+    
+    thermal:
+      - "thermal_conductivity"
+      - "specific_heat"
+      - "debye_temperature"
+    
+    transport:
+      - "electron_mobility"
+      - "hole_mobility"
+
+# ============================================================================
+# LITERATURE DATA SOURCE
+# ============================================================================
+literature:
+  source: "ioffe.ru/SVA/NSM/Semicond/AlGaAs/"
+  reference: "Ioffe Institute Database"
+  citation: "NSM Archive - Physical Properties of Semiconductors"
+  
+  # Use experimental values for device engineering applications
+  note: "Experimental values are recommended for HEMT, laser, solar cell design"
+
+# ============================================================================
+# OUTPUT SETTINGS
+# ============================================================================
+output:
+  # Directory structure
+  base_dir: "data"
+  structures_dir: "data/structures"
+  cif_dir: "data/structures/cif"
+  metadata_dir: "data/structures/metadata"
+  results_dir: "results"
+  logs_dir: "logs"
+  
+  # File naming convention
+  naming_convention: "AlGaAs_x{composition:.3f}"  # e.g., AlGaAs_x0.250
+  
+  # Logging
+  log_level: "INFO"  # DEBUG, INFO, WARNING, ERROR, CRITICAL
+  log_file_prefix: "v0.1.1"
+
+# ============================================================================
+# VALIDATION & TESTING
+# ============================================================================
+validation:
+  # Expected number of outputs
+  expected_structures: 41  # Based on x_step=0.025
+  
+  # Property value ranges (for sanity checking)
+  property_ranges:
+    band_gap: [1.0, 2.5]  # eV, literature range
+    lattice_constant: [5.6, 5.7]  # Angstrom
+    density: [3.5, 5.5]  # g/cm³
+  
+  # Test categories
+  test_categories:
+    - "api_connection"
+    - "structure_generation"
+    - "property_calculation"
+    - "file_output"
+
+# ============================================================================
+# COMPARISON MODE (New in v0.1.1)
+# ============================================================================
+comparison:
+  # Enable side-by-side comparison of literature vs MP-API results
+  enabled: false  # Set true to generate both datasets
+  
+  # Output comparison plots
+  generate_comparison_plots: true
+  comparison_output_dir: "results/comparison_v0.1.1"
+  
+  # Metrics to compare
+  comparison_metrics:
+    - "band_gap"
+    - "formation_energy"
+    - "lattice_constant"
+    - "bulk_modulus"
+
+# ============================================================================
+# BACKWARD COMPATIBILITY
+# ============================================================================
+compatibility:
+  v0_1_mode: false  # Set true to replicate exact v0.1 behavior
+  
+# ============================================================================
+# FUTURE FEATURES (Version 0.2+)
+# ============================================================================
+future:
+  visualization: false  # Enable in v0.2
+  ml_preprocessing: false  # Enable in v0.3
+  model_training: false  # Enable in v0.4
+
+# ============================================================================
+# METADATA
+# ============================================================================
+metadata:
+  author: "Abdullah Hasan Dafa"
+  institution: "Universitas Nasional, Indonesia"
+  contact: "github.com/hasandafa/s-cgcnn"
+  created: "2024-Q4"
+  updated: "2025-Q4"
+  license: "All Rights Reserved"

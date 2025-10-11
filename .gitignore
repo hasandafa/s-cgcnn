@@ -14,6 +14,8 @@ clean_data.bat
 quick_test.bat
 setu_windows.bat
 setup_windows.ps1
+fix_unicode.py
+patch_all_bugs.py
 
 # ===== PYTHON =====
 # Byte-compiled / optimized / DLL files

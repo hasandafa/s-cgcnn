@@ -1,217 +1,225 @@
 # Changelog
 
-All notable changes to s-CGCNN will be documented in this file.
+All notable changes to s-CGCNN project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ---
 
-## [Unreleased]
+## [0.1.1] - 2025-Q4
 
-### Planned for v0.2
-- Interactive crystal structure visualization (crystal-toolkit)
-- Property comparison plots (plotly)
-- Academic-style figure generation
-- Enhanced data export options
+### 🎉 Major Features Added
 
-### Planned for v0.3
-- Graph neural network data preprocessing
-- PyTorch Geometric graph conversion
-- Property feature engineering
-- Dataset splitting utilities
+#### Dual Data Source Support
+- **Added** `interpolation.mode` configuration: choose between "literature" or "mp_api"
+- **Added** `MPFetcher.fetch_all_properties()` for comprehensive property retrieval from MP API
+- **Added** Automatic fallback to literature values when MP data unavailable
+- **Added** `constants.get_properties()` function with data source parameter
 
-### Planned for v0.4
-- Simplified CGCNN architecture implementation
-- CPU-optimized training pipeline
-- Cross-validation framework
-- Model checkpointing
+#### Enhanced Property Calculation
+- **Added** Band gap correction for DFT underestimation (scissor shift method)
+- **Added** Configurable correction factor (default: 1.5x)
+- **Added** MP-API property dictionaries in constants.py
+- **Added** Support for 10+ new properties from MP API:
+  - Formation energy per atom
+  - Energy above hull (stability metric)
+  - Full elastic tensor (C11, C12, C44)
+  - Dielectric constants (static, electronic, ionic)
+  - Magnetic properties
+  - Thermodynamic properties
 
-### Planned for v0.5
-- Band structure prediction
-- DOS prediction
-- Materials Project style visualization
-- Brillouin zone plotting
+#### Comparison Mode
+- **Added** `run_comparison_mode.py` script for side-by-side analysis
+- **Added** Statistical comparison of literature vs MP-API results
+- **Added** CSV export of comparison table
+- **Added** JSON summary with mean, std, RMSE metrics
 
-### Planned for v1.0
+#### Structure & Organization
+- **Added** Package-level `__init__.py` files for proper module structure
+- **Added** Factory functions: `create_fetcher_from_config()`, `create_interpolator_from_config()`
+- **Added** Data classes: `AlloyComposition`, `AlloyProperties`
+- **Added** Type hints: `DataSourceType = Literal["literature", "mp_api"]`
+
+#### Testing
+- **Added** Comprehensive test suite `test_v0.1.1_complete.py`
+- **Added** Tests for both literature and MP-API modes
+- **Added** File I/O operation tests
+- **Added** Automated test report generation
+
+#### Documentation
+- **Added** Complete `README_v0.1.1.md` with detailed usage guide
+- **Added** Configuration guide with all options explained
+- **Added** Troubleshooting section
+- **Added** Citation information
+- **Added** This CHANGELOG.md
+
+### 🔧 Changed
+
+#### Configuration
+- **Changed** Config file to `config_v0.1.1.yaml` with enhanced structure
+- **Changed** Added `mp_bandgap_correction` section
+- **Changed** Added `comparison` section for comparison mode
+- **Changed** Reorganized property lists by category
+
+#### Core Modules
+- **Changed** `constants.py` now has separate dictionaries for literature and MP-API
+- **Changed** `structure_interpolator.py` now accepts `data_source` parameter
+- **Changed** `mp_fetcher.py` enhanced with comprehensive property fetching
+- **Changed** All functions use consistent `snake_case` naming
+
+#### Pipeline Scripts
+- **Changed** `run_version_0.1.1.py` with command-line mode override
+- **Changed** Enhanced logging with data source information
+- **Changed** Summary reports now include data source metadata
+
+### 📊 Improved
+
+#### Property Coverage
+- **Improved** Band gap values now properly sourced (literature: 1.424 eV GaAs, MP-API: ~0.19 eV raw)
+- **Improved** Direct-to-indirect transition handling (x = 0.45 crossover)
+- **Improved** Bowing parameter implementation for Vegard's Law
+
+#### Error Handling
+- **Improved** Graceful fallback when MP-API properties unavailable
+- **Improved** Try-except blocks for API connection issues
+- **Improved** Detailed error messages and warnings
+
+#### Code Quality
+- **Improved** Type hints throughout codebase
+- **Improved** Docstrings for all classes and functions
+- **Improved** Consistent naming conventions
+- **Improved** Modular architecture with clear separation of concerns
+
+### 🐛 Fixed
+- **Fixed** Potential issues with MP-API version compatibility (v0.41.2+)
+- **Fixed** VBM/CBM float handling when MP returns unexpected format
+- **Fixed** None value handling in property interpolation
+- **Fixed** Composition rounding for discrete supercell values
+
+### ⚠️ Important Notes
+
+#### Data Source Selection
+- **Literature mode (default)**: Recommended for device engineering
+  - Uses experimental values (room temperature, 300K)
+  - Accurate for HEMT, laser, solar cell design
+  
+- **MP-API mode**: Recommended for computational studies
+  - Uses DFT-GGA calculated values (0K)
+  - Requires band gap correction (enabled by default)
+  - Includes thermodynamic stability data
+
+#### Breaking Changes
+- None (v0.1.1 is backward compatible with v0.1.0 workflows)
+- Old `run_v0.1.py` scripts still work
+- New features are opt-in via configuration
+
+### 📦 Dependencies
+- **Updated** `requirements.txt` with version specifications
+- **Required** `mp-api==0.41.2` (fixed version)
+- **Required** `pandas` for comparison mode
+- **Required** Python 3.10+ (not 3.13)
+
+---
+
+## [0.1.0] - 2024-Q4
+
+### 🎉 Initial Release
+
+#### Core Features
+- **Added** Materials Project API integration for GaAs and AlAs structures
+- **Added** Structure interpolation via ordered supercell (2×2×2)
+- **Added** 41 AlₓGa₁₋ₓAs composition generation (x = 0.0 to 1.0, step 0.025)
+- **Added** Property calculation using Vegard's Law with bowing parameters
+- **Added** 22 properties per composition:
+  - Physical: lattice constant, density, thermal expansion
+  - Electronic: band gap, effective masses, electron affinity
+  - Optical: dielectric constants, refractive index
+  - Mechanical: elastic constants, bulk modulus, Young's modulus
+  - Thermal: thermal conductivity, specific heat, Debye temperature
+  - Transport: electron mobility, hole mobility
+
+#### Data Source
+- **Added** Literature-based properties from ioffe.ru
+- **Added** Experimental values at 300K (room temperature)
+- **Added** Direct-to-indirect band gap transition at x = 0.45
+
+#### Output Formats
+- **Added** CIF file generation for all compositions
+- **Added** JSON metadata with complete property sets
+- **Added** Summary reports
+
+#### Testing
+- **Added** 4 test categories (100% pass rate)
+- **Added** API connection test
+- **Added** Structure generation test
+- **Added** Property calculation test
+- **Added** File output test
+
+#### Documentation
+- **Added** Complete project documentation (~15,000 words)
+- **Added** 3 Jupyter notebooks for exploration
+- **Added** README with installation and usage guide
+
+#### Project Structure
+- **Added** Modular architecture (src/data_acquisition, src/utils)
+- **Added** Configuration system (YAML)
+- **Added** Logging infrastructure
+- **Added** Version control ready (gitignore)
+
+---
+
+## [Unreleased] - Future Plans
+
+### Version 0.2 (Next - 2-3 weeks)
+- Interactive 3D structure viewer (crystal-toolkit + Dash)
+- Property evolution plots (Plotly)
+- Publication-quality figures
+- Band structure & DOS visualization
+- Enhanced Jupyter notebooks
+
+### Version 0.3 (Planned)
+- Graph neural network preprocessing
+- PyTorch Geometric data conversion
+- Feature engineering
+- Dataset preparation for ML
+
+### Version 0.4 (Planned)
+- s-CGCNN architecture (CPU-optimized)
+- Multi-task learning implementation
+- Cross-validation training
+- Model evaluation metrics
+
+### Version 0.5 (Planned)
+- Band structure/DOS prediction
+- Full property prediction pipeline
+- Uncertainty quantification
+- Model interpretability
+
+### Version 1.0 (Target - Stable Release)
 - Device recommendation system
-- Comprehensive evaluation metrics
-- Full pipeline integration
-- Production-ready deployment
+- Complete end-to-end pipeline
+- Production deployment ready
+- Publication-ready results
 
 ---
 
-## [0.1.0] - 2025-10-10
+## Version Numbering
 
-### 🎉 Initial Release - Data Acquisition & Structure Interpolation
+Format: `MAJOR.MINOR.PATCH`
 
-#### Added
-- **Materials Project Integration**
-  - `MPDataFetcher` class for API communication
-  - Automatic fetching of GaAs (mp-2534) and AlAs (mp-2172)
-  - Property extraction (band gap, density, elastic tensor, dielectric)
-  - JSON export for fetched data
-  - Cached data loading to avoid redundant API calls
+- **MAJOR**: Incompatible API changes
+- **MINOR**: New features (backward compatible)
+- **PATCH**: Bug fixes (backward compatible)
 
-- **Structure Interpolation**
-  - `StructureInterpolator` class for alloy generation
-  - Ordered supercell method (2×2×2 default)
-  - 41 compositions (x = 0.0 to 1.0, step 0.025)
-  - Systematic Ga→Al substitution
-  - Lattice parameter adjustment via Vegard's Law
-
-- **Property Calculation**
-  - Comprehensive property interpolation with bowing parameters
-  - Physical: lattice constant, density, elastic constants, bulk/shear modulus
-  - Electronic: band gap (direct/indirect), electron affinity, effective masses, dielectric constants, refractive index
-  - Thermal: conductivity, expansion, specific heat, Debye temperature
-  - Transport: electron/hole mobility estimates
-  - Direct-to-indirect band gap crossover at x ≈ 0.45
-
-- **Constants & Reference Data**
-  - Extensive AlGaAs property database from ioffe.ru
-  - Bowing parameters from literature
-  - Brillouin zone k-path definitions
-  - Atomic data (masses, radii, numbers)
-  - Utility functions for property calculation
-
-- **Data Export**
-  - CIF file generation for all 41 structures
-  - JSON metadata with full property sets
-  - Generation summary statistics
-  - Organized directory structure
-
-- **Logging & Configuration**
-  - YAML-based configuration system
-  - Comprehensive logging framework
-  - Tqdm-compatible logging for progress bars
-  - Multiple log levels (DEBUG, INFO, WARNING, ERROR)
-
-- **Testing Framework**
-  - Comprehensive test suite for v0.1
-  - 4 test categories: MP fetching, structure generation, property calculation, data validation
-  - Automated validation of all outputs
-  - JSON test reports
-
-- **Documentation**
-  - Complete README with installation guide
-  - Quick start guide (< 10 minutes setup)
-  - Git workflow documentation
-  - Code comments and docstrings
-  - Troubleshooting guide
-
-- **Pipeline Automation**
-  - `run_version_0.1.py` for end-to-end execution
-  - Prerequisite checking
-  - Step-by-step progress display
-  - Error handling and recovery
-  - Execution timing and summary
-
-- **Package Structure**
-  - Proper Python package with setup.py
-  - Organized module structure
-  - Entry points for CLI usage
-  - Requirements specification
-
-#### Technical Specifications
-- **Python Version**: >=3.8
-- **Dependencies**: 
-  - Core: numpy, pandas, scipy
-  - Materials: pymatgen, mp-api, matminer
-  - ML: torch, torch-geometric (prepared for future)
-  - Visualization: plotly, matplotlib (prepared for v0.2)
-- **API**: Materials Project API v0.41+
-- **Data Format**: CIF (structures), JSON (metadata)
-- **Supercell**: 2×2×2 (16 atoms)
-- **Compositions**: 41 (Δx = 0.025)
-
-#### Validated
-- ✅ Materials Project API connectivity
-- ✅ Structure generation accuracy
-- ✅ Property interpolation correctness
-- ✅ Data integrity and completeness
-- ✅ Bowing parameter implementation
-- ✅ Direct-indirect crossover at x=0.45
-- ✅ CIF file validity
-- ✅ Metadata consistency
-
-#### Known Limitations
-- Supercell size fixed at 2×2×2 (sufficient for ordered structures)
-- Linear interpolation with bowing (no cluster expansion)
-- Band structure not yet predicted (only band gap values)
-- Transport properties are estimates (not DFT-derived)
-- CPU-only operation (GPU support in future versions)
-
-#### Performance
-- **Fetch Time**: ~30-60 seconds (one-time, with caching)
-- **Generation Time**: ~60-120 seconds (41 structures)
-- **Total Pipeline**: ~2-3 minutes
-- **Disk Usage**: ~50 MB for complete dataset
-
----
-
-## Version Roadmap
-
-### v0.1.0 ✅ (Current)
-Data acquisition and structure interpolation
-
-### v0.2.0 🚧 (Next)
-Structure visualization and property plotting
-
-### v0.3.0 📋 (Planned)
-Graph building and feature engineering
-
-### v0.4.0 📋 (Planned)
-s-CGCNN model architecture and training
-
-### v0.5.0 📋 (Planned)
-BS/DOS prediction and visualization
-
-### v1.0.0 🎯 (Target)
-Complete device recommendation system
+Current: **v0.1.1** (Minor feature release)
 
 ---
 
 ## Contributing
 
-Contributions are welcome! Please:
-1. Fork the repository
-2. Create a feature branch (`git checkout -b feature/YourFeature`)
-3. Commit your changes (`git commit -m 'Add YourFeature'`)
-4. Push to the branch (`git push origin feature/YourFeature`)
-5. Open a Pull Request
+See individual version sections for changes. For contribution guidelines, see README.md.
 
 ---
 
-## Citation
-
-If you use s-CGCNN in your research, please cite:
-
-```bibtex
-@software{scgcnn2025,
-  author = {Dafa, Abdullah Hasan},
-  title = {s-CGCNN: Simplified Graph Neural Networks for CPU-Efficient Screening of AlGaAs Alloys},
-  year = {2025},
-  url = {https://github.com/hasandafa/s-cgcnn},
-  version = {0.1.0}
-}
-```
-
----
-
-## License
-
-© 2025 Abdullah Hasan Dafa. All rights reserved.
-
----
-
-## Links
-
-- **Repository**: https://github.com/hasandafa/s-cgcnn
-- **Issues**: https://github.com/hasandafa/s-cgcnn/issues
-- **Materials Project**: https://materialsproject.org
-- **Ioffe Database**: https://www.ioffe.ru/SVA/NSM/Semicond/AlGaAs/
-
----
-
-**Last Updated**: 2025-10-10
+*Last updated: 2025-Q4*

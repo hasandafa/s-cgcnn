@@ -1,284 +1,419 @@
-#!/usr/bin/env python
 """
-Requirements Checker for s-CGCNN v0.1
-Validates all dependencies and environment setup
+s-CGCNN v0.1.1 - Dependency Checker
+
+Verifies that all required packages are installed with correct versions.
+
+Usage:
+    python check_requirements.py
+
+Author: Abdullah Hasan Dafa
 """
 
 import sys
 import subprocess
 from pathlib import Path
-from importlib import import_module
+from typing import Dict, List, Tuple
+
+# ============================================================================
+# VERSION REQUIREMENTS
+# ============================================================================
+
+# Critical dependencies (MUST have exact or compatible versions)
+CRITICAL_DEPS = {
+    "mp-api": "0.41.2",  # Fixed version
+    "pymatgen": ">=2023.5.10,<2024.0.0",
+    "numpy": ">=1.24.0,<2.0.0",
+    "pyyaml": ">=6.0",
+}
+
+# Important dependencies (for core functionality)
+IMPORTANT_DEPS = {
+    "scipy": ">=1.10.0",
+    "pandas": ">=2.0.0",
+    "torch": ">=2.0.0",
+    "matplotlib": ">=3.7.0",
+}
+
+# Optional dependencies (for enhanced features)
+OPTIONAL_DEPS = {
+    "plotly": ">=5.14.0",
+    "crystal-toolkit": ">=2023.11.3",
+    "dash": ">=2.11.0",
+    "jupyter": ">=1.0.0",
+    "torch-geometric": ">=2.3.0",
+}
+
+# Python version requirement
+REQUIRED_PYTHON = (3, 10)
+MAX_PYTHON = (3, 12)
 
 
-def check_python_version():
-    """Check Python version compatibility."""
-    print("\n" + "="*60)
-    print("Checking Python Version")
-    print("="*60)
+# ============================================================================
+# HELPER FUNCTIONS
+# ============================================================================
+
+def check_python_version() -> Tuple[bool, str]:
+    """Check if Python version is compatible"""
+    current = sys.version_info[:2]
     
-    version = sys.version_info
-    print(f"Python version: {version.major}.{version.minor}.{version.micro}")
+    if current < REQUIRED_PYTHON:
+        return False, (
+            f"Python {REQUIRED_PYTHON[0]}.{REQUIRED_PYTHON[1]}+ required, "
+            f"but you have {current[0]}.{current[1]}"
+        )
     
-    if version.major != 3:
-        print("❌ FAILED: Python 3 required")
-        return False
+    if current > MAX_PYTHON:
+        return False, (
+            f"Python {current[0]}.{current[1]} is not yet tested. "
+            f"Maximum supported version: {MAX_PYTHON[0]}.{MAX_PYTHON[1]}"
+        )
     
-    if version.minor < 8:
-        print("❌ FAILED: Python 3.8 or higher required")
-        return False
-    
-    if version.minor >= 13:
-        print("⚠️  WARNING: Python 3.13+ may have compatibility issues")
-        print("   Recommended: Python 3.10 or 3.11")
-        return True
-    
-    print("✅ PASSED: Python version compatible")
-    return True
+    return True, f"Python {current[0]}.{current[1]} ✓"
 
 
-def check_module(module_name, import_name=None, required_version=None):
-    """Check if a module is installed and optionally verify version."""
-    if import_name is None:
-        import_name = module_name
+def get_installed_version(package: str) -> str:
+    """Get installed version of a package"""
+    try:
+        import importlib.metadata
+        version = importlib.metadata.version(package)
+        return version
+    except importlib.metadata.PackageNotFoundError:
+        return None
+    except Exception:
+        return None
+
+
+def parse_version_requirement(requirement: str) -> Tuple[str, str]:
+    """
+    Parse version requirement string.
+    
+    Examples:
+        ">=1.0.0" -> (">=", "1.0.0")
+        "==1.0.0" -> ("==", "1.0.0")
+        ">=1.0.0,<2.0.0" -> Returns first constraint
+    """
+    requirement = requirement.strip()
+    
+    # Handle multiple constraints (take first one)
+    if "," in requirement:
+        requirement = requirement.split(",")[0].strip()
+    
+    # Parse operator and version
+    for op in [">=", "<=", "==", ">", "<", "~="]:
+        if requirement.startswith(op):
+            return op, requirement[len(op):].strip()
+    
+    return "==", requirement
+
+
+def compare_versions(installed: str, required: str) -> Tuple[bool, str]:
+    """
+    Compare installed version with requirement.
+    
+    Returns:
+        (is_compatible, message)
+    """
+    operator, req_version = parse_version_requirement(required)
     
     try:
-        module = import_module(import_name)
+        from packaging import version
         
-        # Check version if specified
-        if required_version and hasattr(module, '__version__'):
-            installed_version = module.__version__
-            print(f"  ✅ {module_name:20s} {installed_version}")
+        installed_v = version.parse(installed)
+        required_v = version.parse(req_version)
+        
+        if operator == ">=":
+            compatible = installed_v >= required_v
+        elif operator == "<=":
+            compatible = installed_v <= required_v
+        elif operator == "==":
+            compatible = installed_v == required_v
+        elif operator == ">":
+            compatible = installed_v > required_v
+        elif operator == "<":
+            compatible = installed_v < required_v
+        elif operator == "~=":
+            # Compatible release (same major.minor)
+            compatible = (
+                installed_v.major == required_v.major and
+                installed_v.minor == required_v.minor and
+                installed_v >= required_v
+            )
         else:
-            print(f"  ✅ {module_name:20s} installed")
+            return False, f"Unknown operator: {operator}"
         
-        return True
+        if compatible:
+            return True, f"v{installed} ✓"
+        else:
+            return False, f"v{installed} (need {required})"
+    
     except ImportError:
-        print(f"  ❌ {module_name:20s} NOT FOUND")
-        return False
+        # packaging not available, do basic string comparison
+        if installed == req_version or operator == ">=":
+            return True, f"v{installed} (not verified)"
+        return False, f"v{installed} (need {required})"
 
 
-def check_all_dependencies():
-    """Check all required dependencies."""
-    print("\n" + "="*60)
-    print("Checking Dependencies")
-    print("="*60)
+def check_package(package: str, requirement: str) -> Tuple[bool, str, str]:
+    """
+    Check if a package is installed with correct version.
     
-    core_packages = [
-        ("numpy", "numpy"),
-        ("pandas", "pandas"),
-        ("scipy", "scipy"),
-        ("matplotlib", "matplotlib"),
-        ("seaborn", "seaborn"),
-        ("pyyaml", "yaml"),
-    ]
+    Returns:
+        (is_installed, status, message)
+    """
+    installed_version = get_installed_version(package)
     
-    materials_packages = [
-        ("pymatgen", "pymatgen"),
-        ("mp-api", "mp_api"),
-        ("matminer", "matminer"),
-    ]
+    if installed_version is None:
+        return False, "MISSING", f"Not installed"
     
-    ml_packages = [
-        ("torch", "torch"),
-        ("torch-geometric", "torch_geometric"),
-    ]
+    is_compatible, msg = compare_versions(installed_version, requirement)
     
-    viz_packages = [
-        ("plotly", "plotly"),
-        ("tqdm", "tqdm"),
-    ]
-    
-    all_passed = True
-    
-    print("\nCore Scientific:")
-    for pkg, imp in core_packages:
-        if not check_module(pkg, imp):
-            all_passed = False
-    
-    print("\nMaterials Science:")
-    for pkg, imp in materials_packages:
-        if not check_module(pkg, imp):
-            all_passed = False
-    
-    print("\nMachine Learning:")
-    for pkg, imp in ml_packages:
-        if not check_module(pkg, imp):
-            all_passed = False
-    
-    print("\nVisualization:")
-    for pkg, imp in viz_packages:
-        if not check_module(pkg, imp):
-            all_passed = False
-    
-    return all_passed
+    if is_compatible:
+        return True, "OK", msg
+    else:
+        return False, "VERSION", msg
 
 
-def check_file_structure():
-    """Check directory structure."""
-    print("\n" + "="*60)
-    print("Checking Directory Structure")
-    print("="*60)
+def check_mp_api_key() -> Tuple[bool, str]:
+    """Check if Materials Project API key exists"""
+    key_file = Path("config/mp_api_key.txt")
     
+    if not key_file.exists():
+        return False, "config/mp_api_key.txt not found"
+    
+    try:
+        with open(key_file, 'r') as f:
+            key = f.read().strip()
+        
+        if not key:
+            return False, "API key file is empty"
+        
+        if len(key) < 10:
+            return False, "API key seems invalid (too short)"
+        
+        return True, "API key found ✓"
+    
+    except Exception as e:
+        return False, f"Could not read API key: {e}"
+
+
+def check_directory_structure() -> Tuple[bool, List[str]]:
+    """Check if required directories exist"""
     required_dirs = [
+        "config",
+        "src",
         "src/data_acquisition",
         "src/utils",
-        "config",
-        "data/raw",
-        "data/structures/cif",
-        "data/structures/metadata",
-        "logs",
-        "results",
-        "notebooks",
+        "tests",
     ]
     
-    all_present = True
-    
+    missing = []
     for dir_path in required_dirs:
-        p = Path(dir_path)
-        if p.exists():
-            print(f"  ✅ {dir_path}")
-        else:
-            print(f"  ❌ {dir_path} - MISSING")
-            all_present = False
+        if not Path(dir_path).exists():
+            missing.append(dir_path)
     
-    return all_present
+    if missing:
+        return False, missing
+    return True, []
 
 
-def check_api_key():
-    """Check if API key is configured."""
-    print("\n" + "="*60)
-    print("Checking API Key")
-    print("="*60)
-    
-    api_key_file = Path("config/mp_api_key.txt")
-    
-    if not api_key_file.exists():
-        print("  ❌ API key file not found")
-        print("     Create: config/mp_api_key.txt")
-        print("     Get key from: https://next-gen.materialsproject.org/api")
-        return False
-    
-    with open(api_key_file, 'r') as f:
-        api_key = f.read().strip()
-    
-    if not api_key or len(api_key) < 10:
-        print("  ❌ API key appears invalid")
-        print("     Check: config/mp_api_key.txt")
-        return False
-    
-    print(f"  ✅ API key configured (length: {len(api_key)} chars)")
-    return True
-
-
-def check_imports():
-    """Check if project modules can be imported."""
-    print("\n" + "="*60)
-    print("Checking Project Imports")
-    print("="*60)
-    
+def install_package(package: str) -> bool:
+    """Attempt to install a package"""
     try:
-        from src.data_acquisition.mp_fetcher import MPDataFetcher
-        print("  ✅ mp_fetcher")
-    except ImportError as e:
-        print(f"  ❌ mp_fetcher: {e}")
-        return False
-    
-    try:
-        from src.data_acquisition.structure_interpolator import StructureInterpolator
-        print("  ✅ structure_interpolator")
-    except ImportError as e:
-        print(f"  ❌ structure_interpolator: {e}")
-        return False
-    
-    try:
-        from src.utils.constants import GaAs_PROPERTIES
-        print("  ✅ constants")
-    except ImportError as e:
-        print(f"  ❌ constants: {e}")
-        return False
-    
-    try:
-        from src.utils.logger_config import setup_logger
-        print("  ✅ logger_config")
-    except ImportError as e:
-        print(f"  ❌ logger_config: {e}")
-        return False
-    
-    return True
-
-
-def check_pip_conflicts():
-    """Check for pip dependency conflicts."""
-    print("\n" + "="*60)
-    print("Checking for Dependency Conflicts")
-    print("="*60)
-    
-    try:
-        result = subprocess.run(
-            [sys.executable, "-m", "pip", "check"],
-            capture_output=True,
-            text=True,
-            timeout=30
+        print(f"  → Installing {package}...")
+        subprocess.check_call(
+            [sys.executable, "-m", "pip", "install", package],
+            stdout=subprocess.DEVNULL,
+            stderr=subprocess.DEVNULL
         )
-        
-        if result.returncode == 0:
-            print("  ✅ No dependency conflicts found")
-            return True
-        else:
-            print("  ⚠️  Dependency conflicts detected:")
-            print(result.stdout)
-            return False
-    except Exception as e:
-        print(f"  ⚠️  Could not check conflicts: {e}")
-        return True  # Don't fail on this
+        return True
+    except subprocess.CalledProcessError:
+        return False
 
 
-def generate_report():
-    """Run all checks and generate report."""
-    print("\n" + "="*70)
-    print("s-CGCNN v0.1 - Requirements Checker")
-    print("="*70)
+# ============================================================================
+# MAIN CHECK FUNCTION
+# ============================================================================
+
+def run_checks():
+    """Run all dependency checks and print report"""
     
-    results = {}
+    print("=" * 80)
+    print("  s-CGCNN v0.1.1 - Dependency Checker")
+    print("=" * 80)
+    print()
     
-    results['python'] = check_python_version()
-    results['dependencies'] = check_all_dependencies()
-    results['structure'] = check_file_structure()
-    results['api_key'] = check_api_key()
-    results['imports'] = check_imports()
-    results['conflicts'] = check_pip_conflicts()
+    all_ok = True
     
-    # Summary
-    print("\n" + "="*70)
-    print("SUMMARY")
-    print("="*70)
+    # ========================================================================
+    # 1. Python Version
+    # ========================================================================
+    print("1. PYTHON VERSION")
+    print("-" * 80)
     
-    passed = sum(1 for v in results.values() if v)
-    total = len(results)
+    py_ok, py_msg = check_python_version()
     
-    for check, status in results.items():
-        status_str = "✅ PASS" if status else "❌ FAIL"
-        print(f"  {status_str}  {check.replace('_', ' ').title()}")
-    
-    print("\n" + "="*70)
-    
-    if passed == total:
-        print("✅✅✅ ALL CHECKS PASSED - READY TO GO! ✅✅✅")
-        print("\nNext steps:")
-        print("  1. Run pipeline: python run_version_0.1.py")
-        print("  2. Run tests: python '1. Data Acquisition and Structure Interpolation Testing.py'")
-        print("  3. Explore notebooks: jupyter notebook")
-        return 0
+    if py_ok:
+        print(f"  ✓ {py_msg}")
     else:
-        print(f"⚠️  {total - passed}/{total} checks failed")
-        print("\nFix the issues above, then run this script again.")
-        print("\nCommon fixes:")
-        print("  - Missing dependencies: pip install -r requirements.txt")
-        print("  - Missing directories: run setup_windows.bat")
-        print("  - Missing API key: create config/mp_api_key.txt")
+        print(f"  ✗ {py_msg}")
+        all_ok = False
+    
+    print()
+    
+    # ========================================================================
+    # 2. Critical Dependencies
+    # ========================================================================
+    print("2. CRITICAL DEPENDENCIES (Must have)")
+    print("-" * 80)
+    
+    critical_ok = True
+    for package, requirement in CRITICAL_DEPS.items():
+        is_ok, status, msg = check_package(package, requirement)
+        
+        if is_ok:
+            print(f"  ✓ {package:<20} {msg}")
+        else:
+            print(f"  ✗ {package:<20} {msg}")
+            critical_ok = False
+            all_ok = False
+    
+    print()
+    
+    # ========================================================================
+    # 3. Important Dependencies
+    # ========================================================================
+    print("3. IMPORTANT DEPENDENCIES (Core functionality)")
+    print("-" * 80)
+    
+    important_ok = True
+    for package, requirement in IMPORTANT_DEPS.items():
+        is_ok, status, msg = check_package(package, requirement)
+        
+        if is_ok:
+            print(f"  ✓ {package:<20} {msg}")
+        else:
+            print(f"  ⚠ {package:<20} {msg}")
+            important_ok = False
+    
+    print()
+    
+    # ========================================================================
+    # 4. Optional Dependencies
+    # ========================================================================
+    print("4. OPTIONAL DEPENDENCIES (Enhanced features)")
+    print("-" * 80)
+    
+    optional_installed = []
+    optional_missing = []
+    
+    for package, requirement in OPTIONAL_DEPS.items():
+        is_ok, status, msg = check_package(package, requirement)
+        
+        if is_ok:
+            print(f"  ✓ {package:<20} {msg}")
+            optional_installed.append(package)
+        else:
+            print(f"  - {package:<20} {msg}")
+            optional_missing.append(package)
+    
+    print()
+    
+    # ========================================================================
+    # 5. Materials Project API Key
+    # ========================================================================
+    print("5. MATERIALS PROJECT API KEY")
+    print("-" * 80)
+    
+    key_ok, key_msg = check_mp_api_key()
+    
+    if key_ok:
+        print(f"  ✓ {key_msg}")
+    else:
+        print(f"  ✗ {key_msg}")
+        print(f"     Get your free API key from: https://materialsproject.org")
+        print(f"     Save it to: config/mp_api_key.txt")
+        all_ok = False
+    
+    print()
+    
+    # ========================================================================
+    # 6. Directory Structure
+    # ========================================================================
+    print("6. DIRECTORY STRUCTURE")
+    print("-" * 80)
+    
+    dirs_ok, missing_dirs = check_directory_structure()
+    
+    if dirs_ok:
+        print(f"  ✓ All required directories exist")
+    else:
+        print(f"  ✗ Missing directories:")
+        for dir_path in missing_dirs:
+            print(f"     - {dir_path}")
+        all_ok = False
+    
+    print()
+    
+    # ========================================================================
+    # SUMMARY
+    # ========================================================================
+    print("=" * 80)
+    print("  SUMMARY")
+    print("=" * 80)
+    
+    if all_ok and critical_ok and important_ok:
+        print("  ✓ ALL CHECKS PASSED - Ready to use s-CGCNN!")
+        print()
+        print("  Next steps:")
+        print("    1. python run_version_0.1.1.py --mode literature")
+        print("    2. python tests/test_v0.1.1_complete.py")
+        print()
+        return 0
+    
+    elif critical_ok and important_ok:
+        print("  ⚠ CORE DEPENDENCIES OK - Basic functionality available")
+        print()
+        if optional_missing:
+            print(f"  Missing optional packages ({len(optional_missing)}):")
+            for pkg in optional_missing:
+                print(f"    - {pkg}")
+        print()
+        print("  You can proceed, but some features may be unavailable.")
+        print()
+        return 0
+    
+    else:
+        print("  ✗ CRITICAL ISSUES FOUND - Cannot run s-CGCNN")
+        print()
+        print("  Required actions:")
+        
+        if not critical_ok:
+            print("    1. Install critical dependencies:")
+            print("       pip install -r requirements.txt")
+        
+        if not important_ok:
+            print("    2. Install important dependencies:")
+            for package, requirement in IMPORTANT_DEPS.items():
+                is_ok, _, _ = check_package(package, requirement)
+                if not is_ok:
+                    print(f"       pip install '{package}{requirement}'")
+        
+        if not key_ok:
+            print("    3. Setup Materials Project API key:")
+            print("       - Get key from: https://materialsproject.org")
+            print("       - Save to: config/mp_api_key.txt")
+        
+        print()
         return 1
+    
+    print("=" * 80)
+    print()
 
+
+# ============================================================================
+# MAIN
+# ============================================================================
 
 if __name__ == "__main__":
-    exit_code = generate_report()
+    exit_code = run_checks()
     sys.exit(exit_code)
