@@ -188,3 +188,7 @@ site/
 scratch/
 temp/
 tmp/
+
+# Ignore old version branches if accidentally created
+version-*
+v0.*-branch
