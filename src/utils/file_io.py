@@ -1,5 +1,5 @@
 """
-File I/O Utilities for s-CGCNN v0.1.1
+File I/O Utilities for s-CGCNN v0.2
 
 Helper functions for reading/writing files safely.
 
@@ -446,6 +446,61 @@ def get_file_size_mb(filepath: Union[str, Path]) -> float:
     """Get file size in MB."""
     return get_file_size(filepath) / (1024 * 1024)
 
+"""
+Add these functions to your src/utils/file_io.py file
+"""
+
+from pymatgen.core import Structure
+from pathlib import Path
+from typing import Union
+
+
+def load_structure_from_cif(cif_path: Union[str, Path]) -> Structure:
+    """
+    Load crystal structure from CIF file.
+    
+    Args:
+        cif_path: Path to CIF file
+        
+    Returns:
+        Structure: Pymatgen Structure object
+        
+    Raises:
+        FileNotFoundError: If CIF file doesn't exist
+        ValueError: If CIF file is invalid
+        
+    Example:
+        >>> structure = load_structure_from_cif('data/structures/cif/AlGaAs_x0.500.cif')
+        >>> print(structure.formula)
+        Al0.5Ga0.5As
+    """
+    cif_path = Path(cif_path)
+    
+    if not cif_path.exists():
+        raise FileNotFoundError(f"CIF file not found: {cif_path}")
+    
+    try:
+        structure = Structure.from_file(str(cif_path))
+        return structure
+    except Exception as e:
+        raise ValueError(f"Failed to load CIF file {cif_path}: {e}")
+
+
+def save_structure_to_cif(structure: Structure, output_path: Union[str, Path]):
+    """
+    Save crystal structure to CIF file.
+    
+    Args:
+        structure: Pymatgen Structure object
+        output_path: Output CIF file path
+        
+    Example:
+        >>> save_structure_to_cif(structure, 'output/my_structure.cif')
+    """
+    output_path = Path(output_path)
+    output_path.parent.mkdir(parents=True, exist_ok=True)
+    
+    structure.to(filename=str(output_path), fmt='cif')
 
 # ============================================================================
 # MODULE METADATA

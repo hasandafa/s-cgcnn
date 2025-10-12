@@ -1,6 +1,6 @@
 {
   "version": "0.1.1",
-  "timestamp": "2025-10-11T12:04:48.522731",
+  "timestamp": "2025-10-12T14:45:34.178072",
   "configuration": {
     "data_source": "literature",
     "composition_range": {
@@ -12,369 +12,369 @@
   },
   "structures": [
     {
-      "composition": "Al0.000Ga1.000As",
+      "composition": "GaAs",
       "x": 0.0,
       "num_al": 0,
-      "num_ga": 8,
+      "num_ga": 32,
       "band_gap": 1.424,
       "band_gap_type": "direct",
       "lattice_constant": 5.6533
     },
     {
-      "composition": "Al0.000Ga1.000As",
-      "x": 0.0,
-      "num_al": 0,
+      "composition": "AlGa31As32",
+      "x": 0.03125,
+      "num_al": 1,
+      "num_ga": 31,
+      "band_gap": 1.436048828125,
+      "band_gap_type": "direct",
+      "lattice_constant": 5.65354375
+    },
+    {
+      "composition": "AlGa15As16",
+      "x": 0.0625,
+      "num_al": 2,
+      "num_ga": 30,
+      "band_gap": 1.4488203124999999,
+      "band_gap_type": "direct",
+      "lattice_constant": 5.6537875
+    },
+    {
+      "composition": "AlGa15As16",
+      "x": 0.0625,
+      "num_al": 2,
+      "num_ga": 30,
+      "band_gap": 1.4488203124999999,
+      "band_gap_type": "direct",
+      "lattice_constant": 5.6537875
+    },
+    {
+      "composition": "Al3Ga29As32",
+      "x": 0.09375,
+      "num_al": 3,
+      "num_ga": 29,
+      "band_gap": 1.4623144531249999,
+      "band_gap_type": "direct",
+      "lattice_constant": 5.654031249999999
+    },
+    {
+      "composition": "AlGa7As8",
+      "x": 0.125,
+      "num_al": 4,
+      "num_ga": 28,
+      "band_gap": 1.4765312499999999,
+      "band_gap_type": "direct",
+      "lattice_constant": 5.654274999999999
+    },
+    {
+      "composition": "Al5Ga27As32",
+      "x": 0.15625,
+      "num_al": 5,
+      "num_ga": 27,
+      "band_gap": 1.4914707031249999,
+      "band_gap_type": "direct",
+      "lattice_constant": 5.654518749999999
+    },
+    {
+      "composition": "Al3Ga13As16",
+      "x": 0.1875,
+      "num_al": 6,
+      "num_ga": 26,
+      "band_gap": 1.5071328125,
+      "band_gap_type": "direct",
+      "lattice_constant": 5.6547624999999995
+    },
+    {
+      "composition": "Al3Ga13As16",
+      "x": 0.1875,
+      "num_al": 6,
+      "num_ga": 26,
+      "band_gap": 1.5071328125,
+      "band_gap_type": "direct",
+      "lattice_constant": 5.6547624999999995
+    },
+    {
+      "composition": "Al7Ga25As32",
+      "x": 0.21875,
+      "num_al": 7,
+      "num_ga": 25,
+      "band_gap": 1.523517578125,
+      "band_gap_type": "direct",
+      "lattice_constant": 5.65500625
+    },
+    {
+      "composition": "AlGa3As4",
+      "x": 0.25,
+      "num_al": 8,
+      "num_ga": 24,
+      "band_gap": 1.5406250000000001,
+      "band_gap_type": "direct",
+      "lattice_constant": 5.65525
+    },
+    {
+      "composition": "Al9Ga23As32",
+      "x": 0.28125,
+      "num_al": 9,
+      "num_ga": 23,
+      "band_gap": 1.558455078125,
+      "band_gap_type": "direct",
+      "lattice_constant": 5.65549375
+    },
+    {
+      "composition": "Al5Ga11As16",
+      "x": 0.3125,
+      "num_al": 10,
+      "num_ga": 22,
+      "band_gap": 1.5770078124999998,
+      "band_gap_type": "direct",
+      "lattice_constant": 5.6557375
+    },
+    {
+      "composition": "Al5Ga11As16",
+      "x": 0.3125,
+      "num_al": 10,
+      "num_ga": 22,
+      "band_gap": 1.5770078124999998,
+      "band_gap_type": "direct",
+      "lattice_constant": 5.6557375
+    },
+    {
+      "composition": "Al11Ga21As32",
+      "x": 0.34375,
+      "num_al": 11,
+      "num_ga": 21,
+      "band_gap": 1.596283203125,
+      "band_gap_type": "direct",
+      "lattice_constant": 5.65598125
+    },
+    {
+      "composition": "Al3Ga5As8",
+      "x": 0.375,
+      "num_al": 12,
+      "num_ga": 20,
+      "band_gap": 1.61628125,
+      "band_gap_type": "direct",
+      "lattice_constant": 5.656225
+    },
+    {
+      "composition": "Al13Ga19As32",
+      "x": 0.40625,
+      "num_al": 13,
+      "num_ga": 19,
+      "band_gap": 1.637001953125,
+      "band_gap_type": "direct",
+      "lattice_constant": 5.65646875
+    },
+    {
+      "composition": "Al7Ga9As16",
+      "x": 0.4375,
+      "num_al": 14,
+      "num_ga": 18,
+      "band_gap": 1.6584453125,
+      "band_gap_type": "direct",
+      "lattice_constant": 5.6567125
+    },
+    {
+      "composition": "Al7Ga9As16",
+      "x": 0.4375,
+      "num_al": 14,
+      "num_ga": 18,
+      "band_gap": 1.6584453125,
+      "band_gap_type": "direct",
+      "lattice_constant": 5.6567125
+    },
+    {
+      "composition": "Al15Ga17As32",
+      "x": 0.46875,
+      "num_al": 15,
+      "num_ga": 17,
+      "band_gap": 1.6806113281250001,
+      "band_gap_type": "indirect",
+      "lattice_constant": 5.65695625
+    },
+    {
+      "composition": "AlGaAs2",
+      "x": 0.5,
+      "num_al": 16,
+      "num_ga": 16,
+      "band_gap": 1.7035,
+      "band_gap_type": "indirect",
+      "lattice_constant": 5.6572
+    },
+    {
+      "composition": "Al17Ga15As32",
+      "x": 0.53125,
+      "num_al": 17,
+      "num_ga": 15,
+      "band_gap": 1.7271113281250001,
+      "band_gap_type": "indirect",
+      "lattice_constant": 5.6574437500000005
+    },
+    {
+      "composition": "Al9Ga7As16",
+      "x": 0.5625,
+      "num_al": 18,
+      "num_ga": 14,
+      "band_gap": 1.7514453125,
+      "band_gap_type": "indirect",
+      "lattice_constant": 5.6576875
+    },
+    {
+      "composition": "Al9Ga7As16",
+      "x": 0.5625,
+      "num_al": 18,
+      "num_ga": 14,
+      "band_gap": 1.7514453125,
+      "band_gap_type": "indirect",
+      "lattice_constant": 5.6576875
+    },
+    {
+      "composition": "Al19Ga13As32",
+      "x": 0.59375,
+      "num_al": 19,
+      "num_ga": 13,
+      "band_gap": 1.776501953125,
+      "band_gap_type": "indirect",
+      "lattice_constant": 5.65793125
+    },
+    {
+      "composition": "Al5Ga3As8",
+      "x": 0.625,
+      "num_al": 20,
+      "num_ga": 12,
+      "band_gap": 1.80228125,
+      "band_gap_type": "indirect",
+      "lattice_constant": 5.658175
+    },
+    {
+      "composition": "Al21Ga11As32",
+      "x": 0.65625,
+      "num_al": 21,
+      "num_ga": 11,
+      "band_gap": 1.8287832031250002,
+      "band_gap_type": "indirect",
+      "lattice_constant": 5.65841875
+    },
+    {
+      "composition": "Al11Ga5As16",
+      "x": 0.6875,
+      "num_al": 22,
+      "num_ga": 10,
+      "band_gap": 1.8560078125000001,
+      "band_gap_type": "indirect",
+      "lattice_constant": 5.6586625
+    },
+    {
+      "composition": "Al11Ga5As16",
+      "x": 0.6875,
+      "num_al": 22,
+      "num_ga": 10,
+      "band_gap": 1.8560078125000001,
+      "band_gap_type": "indirect",
+      "lattice_constant": 5.6586625
+    },
+    {
+      "composition": "Al23Ga9As32",
+      "x": 0.71875,
+      "num_al": 23,
+      "num_ga": 9,
+      "band_gap": 1.8839550781250003,
+      "band_gap_type": "indirect",
+      "lattice_constant": 5.658906249999999
+    },
+    {
+      "composition": "Al3GaAs4",
+      "x": 0.75,
+      "num_al": 24,
       "num_ga": 8,
-      "band_gap": 1.424,
-      "band_gap_type": "direct",
-      "lattice_constant": 5.6533
-    },
-    {
-      "composition": "Al0.000Ga1.000As",
-      "x": 0.0,
-      "num_al": 0,
-      "num_ga": 8,
-      "band_gap": 1.424,
-      "band_gap_type": "direct",
-      "lattice_constant": 5.6533
-    },
-    {
-      "composition": "Al0.125Ga0.875As",
-      "x": 0.125,
-      "num_al": 1,
-      "num_ga": 7,
-      "band_gap": 1.4765312499999999,
-      "band_gap_type": "direct",
-      "lattice_constant": 5.654274999999999
-    },
-    {
-      "composition": "Al0.125Ga0.875As",
-      "x": 0.125,
-      "num_al": 1,
-      "num_ga": 7,
-      "band_gap": 1.4765312499999999,
-      "band_gap_type": "direct",
-      "lattice_constant": 5.654274999999999
-    },
-    {
-      "composition": "Al0.125Ga0.875As",
-      "x": 0.125,
-      "num_al": 1,
-      "num_ga": 7,
-      "band_gap": 1.4765312499999999,
-      "band_gap_type": "direct",
-      "lattice_constant": 5.654274999999999
-    },
-    {
-      "composition": "Al0.125Ga0.875As",
-      "x": 0.125,
-      "num_al": 1,
-      "num_ga": 7,
-      "band_gap": 1.4765312499999999,
-      "band_gap_type": "direct",
-      "lattice_constant": 5.654274999999999
-    },
-    {
-      "composition": "Al0.125Ga0.875As",
-      "x": 0.125,
-      "num_al": 1,
-      "num_ga": 7,
-      "band_gap": 1.4765312499999999,
-      "band_gap_type": "direct",
-      "lattice_constant": 5.654274999999999
-    },
-    {
-      "composition": "Al0.250Ga0.750As",
-      "x": 0.25,
-      "num_al": 2,
-      "num_ga": 6,
-      "band_gap": 1.5406250000000001,
-      "band_gap_type": "direct",
-      "lattice_constant": 5.65525
-    },
-    {
-      "composition": "Al0.250Ga0.750As",
-      "x": 0.25,
-      "num_al": 2,
-      "num_ga": 6,
-      "band_gap": 1.5406250000000001,
-      "band_gap_type": "direct",
-      "lattice_constant": 5.65525
-    },
-    {
-      "composition": "Al0.250Ga0.750As",
-      "x": 0.25,
-      "num_al": 2,
-      "num_ga": 6,
-      "band_gap": 1.5406250000000001,
-      "band_gap_type": "direct",
-      "lattice_constant": 5.65525
-    },
-    {
-      "composition": "Al0.250Ga0.750As",
-      "x": 0.25,
-      "num_al": 2,
-      "num_ga": 6,
-      "band_gap": 1.5406250000000001,
-      "band_gap_type": "direct",
-      "lattice_constant": 5.65525
-    },
-    {
-      "composition": "Al0.250Ga0.750As",
-      "x": 0.25,
-      "num_al": 2,
-      "num_ga": 6,
-      "band_gap": 1.5406250000000001,
-      "band_gap_type": "direct",
-      "lattice_constant": 5.65525
-    },
-    {
-      "composition": "Al0.375Ga0.625As",
-      "x": 0.375,
-      "num_al": 3,
-      "num_ga": 5,
-      "band_gap": 1.61628125,
-      "band_gap_type": "direct",
-      "lattice_constant": 5.656225
-    },
-    {
-      "composition": "Al0.375Ga0.625As",
-      "x": 0.375,
-      "num_al": 3,
-      "num_ga": 5,
-      "band_gap": 1.61628125,
-      "band_gap_type": "direct",
-      "lattice_constant": 5.656225
-    },
-    {
-      "composition": "Al0.375Ga0.625As",
-      "x": 0.375,
-      "num_al": 3,
-      "num_ga": 5,
-      "band_gap": 1.61628125,
-      "band_gap_type": "direct",
-      "lattice_constant": 5.656225
-    },
-    {
-      "composition": "Al0.375Ga0.625As",
-      "x": 0.375,
-      "num_al": 3,
-      "num_ga": 5,
-      "band_gap": 1.61628125,
-      "band_gap_type": "direct",
-      "lattice_constant": 5.656225
-    },
-    {
-      "composition": "Al0.375Ga0.625As",
-      "x": 0.375,
-      "num_al": 3,
-      "num_ga": 5,
-      "band_gap": 1.61628125,
-      "band_gap_type": "direct",
-      "lattice_constant": 5.656225
-    },
-    {
-      "composition": "Al0.500Ga0.500As",
-      "x": 0.5,
-      "num_al": 4,
-      "num_ga": 4,
-      "band_gap": 1.7035,
-      "band_gap_type": "indirect",
-      "lattice_constant": 5.6572
-    },
-    {
-      "composition": "Al0.500Ga0.500As",
-      "x": 0.5,
-      "num_al": 4,
-      "num_ga": 4,
-      "band_gap": 1.7035,
-      "band_gap_type": "indirect",
-      "lattice_constant": 5.6572
-    },
-    {
-      "composition": "Al0.500Ga0.500As",
-      "x": 0.5,
-      "num_al": 4,
-      "num_ga": 4,
-      "band_gap": 1.7035,
-      "band_gap_type": "indirect",
-      "lattice_constant": 5.6572
-    },
-    {
-      "composition": "Al0.500Ga0.500As",
-      "x": 0.5,
-      "num_al": 4,
-      "num_ga": 4,
-      "band_gap": 1.7035,
-      "band_gap_type": "indirect",
-      "lattice_constant": 5.6572
-    },
-    {
-      "composition": "Al0.500Ga0.500As",
-      "x": 0.5,
-      "num_al": 4,
-      "num_ga": 4,
-      "band_gap": 1.7035,
-      "band_gap_type": "indirect",
-      "lattice_constant": 5.6572
-    },
-    {
-      "composition": "Al0.625Ga0.375As",
-      "x": 0.625,
-      "num_al": 5,
-      "num_ga": 3,
-      "band_gap": 1.80228125,
-      "band_gap_type": "indirect",
-      "lattice_constant": 5.658175
-    },
-    {
-      "composition": "Al0.625Ga0.375As",
-      "x": 0.625,
-      "num_al": 5,
-      "num_ga": 3,
-      "band_gap": 1.80228125,
-      "band_gap_type": "indirect",
-      "lattice_constant": 5.658175
-    },
-    {
-      "composition": "Al0.625Ga0.375As",
-      "x": 0.625,
-      "num_al": 5,
-      "num_ga": 3,
-      "band_gap": 1.80228125,
-      "band_gap_type": "indirect",
-      "lattice_constant": 5.658175
-    },
-    {
-      "composition": "Al0.625Ga0.375As",
-      "x": 0.625,
-      "num_al": 5,
-      "num_ga": 3,
-      "band_gap": 1.80228125,
-      "band_gap_type": "indirect",
-      "lattice_constant": 5.658175
-    },
-    {
-      "composition": "Al0.625Ga0.375As",
-      "x": 0.625,
-      "num_al": 5,
-      "num_ga": 3,
-      "band_gap": 1.80228125,
-      "band_gap_type": "indirect",
-      "lattice_constant": 5.658175
-    },
-    {
-      "composition": "Al0.750Ga0.250As",
-      "x": 0.75,
-      "num_al": 6,
-      "num_ga": 2,
       "band_gap": 1.9126250000000002,
       "band_gap_type": "indirect",
       "lattice_constant": 5.65915
     },
     {
-      "composition": "Al0.750Ga0.250As",
-      "x": 0.75,
-      "num_al": 6,
+      "composition": "Al25Ga7As32",
+      "x": 0.78125,
+      "num_al": 25,
+      "num_ga": 7,
+      "band_gap": 1.9420175781250002,
+      "band_gap_type": "indirect",
+      "lattice_constant": 5.65939375
+    },
+    {
+      "composition": "Al13Ga3As16",
+      "x": 0.8125,
+      "num_al": 26,
+      "num_ga": 6,
+      "band_gap": 1.9721328125000002,
+      "band_gap_type": "indirect",
+      "lattice_constant": 5.6596375000000005
+    },
+    {
+      "composition": "Al13Ga3As16",
+      "x": 0.8125,
+      "num_al": 26,
+      "num_ga": 6,
+      "band_gap": 1.9721328125000002,
+      "band_gap_type": "indirect",
+      "lattice_constant": 5.6596375000000005
+    },
+    {
+      "composition": "Al27Ga5As32",
+      "x": 0.84375,
+      "num_al": 27,
+      "num_ga": 5,
+      "band_gap": 2.0029707031250004,
+      "band_gap_type": "indirect",
+      "lattice_constant": 5.659881250000001
+    },
+    {
+      "composition": "Al7GaAs8",
+      "x": 0.875,
+      "num_al": 28,
+      "num_ga": 4,
+      "band_gap": 2.03453125,
+      "band_gap_type": "indirect",
+      "lattice_constant": 5.660125000000001
+    },
+    {
+      "composition": "Al29Ga3As32",
+      "x": 0.90625,
+      "num_al": 29,
+      "num_ga": 3,
+      "band_gap": 2.066814453125,
+      "band_gap_type": "indirect",
+      "lattice_constant": 5.66036875
+    },
+    {
+      "composition": "Al15GaAs16",
+      "x": 0.9375,
+      "num_al": 30,
       "num_ga": 2,
-      "band_gap": 1.9126250000000002,
+      "band_gap": 2.0998203125000003,
       "band_gap_type": "indirect",
-      "lattice_constant": 5.65915
+      "lattice_constant": 5.6606125
     },
     {
-      "composition": "Al0.750Ga0.250As",
-      "x": 0.75,
-      "num_al": 6,
+      "composition": "Al15GaAs16",
+      "x": 0.9375,
+      "num_al": 30,
       "num_ga": 2,
-      "band_gap": 1.9126250000000002,
+      "band_gap": 2.0998203125000003,
       "band_gap_type": "indirect",
-      "lattice_constant": 5.65915
+      "lattice_constant": 5.6606125
     },
     {
-      "composition": "Al0.750Ga0.250As",
-      "x": 0.75,
-      "num_al": 6,
-      "num_ga": 2,
-      "band_gap": 1.9126250000000002,
-      "band_gap_type": "indirect",
-      "lattice_constant": 5.65915
-    },
-    {
-      "composition": "Al0.750Ga0.250As",
-      "x": 0.75,
-      "num_al": 6,
-      "num_ga": 2,
-      "band_gap": 1.9126250000000002,
-      "band_gap_type": "indirect",
-      "lattice_constant": 5.65915
-    },
-    {
-      "composition": "Al0.875Ga0.125As",
-      "x": 0.875,
-      "num_al": 7,
+      "composition": "Al31GaAs32",
+      "x": 0.96875,
+      "num_al": 31,
       "num_ga": 1,
-      "band_gap": 2.03453125,
+      "band_gap": 2.1335488281250004,
       "band_gap_type": "indirect",
-      "lattice_constant": 5.660125000000001
+      "lattice_constant": 5.66085625
     },
     {
-      "composition": "Al0.875Ga0.125As",
-      "x": 0.875,
-      "num_al": 7,
-      "num_ga": 1,
-      "band_gap": 2.03453125,
-      "band_gap_type": "indirect",
-      "lattice_constant": 5.660125000000001
-    },
-    {
-      "composition": "Al0.875Ga0.125As",
-      "x": 0.875,
-      "num_al": 7,
-      "num_ga": 1,
-      "band_gap": 2.03453125,
-      "band_gap_type": "indirect",
-      "lattice_constant": 5.660125000000001
-    },
-    {
-      "composition": "Al0.875Ga0.125As",
-      "x": 0.875,
-      "num_al": 7,
-      "num_ga": 1,
-      "band_gap": 2.03453125,
-      "band_gap_type": "indirect",
-      "lattice_constant": 5.660125000000001
-    },
-    {
-      "composition": "Al0.875Ga0.125As",
-      "x": 0.875,
-      "num_al": 7,
-      "num_ga": 1,
-      "band_gap": 2.03453125,
-      "band_gap_type": "indirect",
-      "lattice_constant": 5.660125000000001
-    },
-    {
-      "composition": "Al1.000Ga0.000As",
+      "composition": "AlAs",
       "x": 1.0,
-      "num_al": 8,
-      "num_ga": 0,
-      "band_gap": 2.168,
-      "band_gap_type": "indirect",
-      "lattice_constant": 5.6611
-    },
-    {
-      "composition": "Al1.000Ga0.000As",
-      "x": 1.0,
-      "num_al": 8,
-      "num_ga": 0,
-      "band_gap": 2.168,
-      "band_gap_type": "indirect",
-      "lattice_constant": 5.6611
-    },
-    {
-      "composition": "Al1.000Ga0.000As",
-      "x": 1.0,
-      "num_al": 8,
+      "num_al": 32,
       "num_ga": 0,
       "band_gap": 2.168,
       "band_gap_type": "indirect",

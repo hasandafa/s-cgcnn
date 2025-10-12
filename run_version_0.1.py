@@ -12,7 +12,7 @@ from datetime import datetime
 # Add to path
 sys.path.append(str(Path(__file__).parent))
 
-from src.data_acquisition.mp_fetcher import MPDataFetcher
+from src.data_acquisition.mp_fetcher import MPFetcher
 from src.data_acquisition.structure_interpolator import StructureInterpolator
 from src.utils.logger_config import setup_logger
 
@@ -76,8 +76,8 @@ def step_1_fetch_mp_data(api_key: str) -> bool:
     logger = setup_logger("step1_fetch", log_file="logs/v0.1_pipeline_step1.log")
     
     try:
-        fetcher = MPDataFetcher(api_key, output_dir="data/raw")
-        
+        fetcher = MPFetcher(api_key, output_dir="data/raw")
+
         # Check if data already exists
         gaas_data = fetcher.load_saved_data("GaAs")
         alas_data = fetcher.load_saved_data("AlAs")
@@ -122,7 +122,7 @@ def step_2_generate_structures() -> bool:
     
     try:
         # Load MP data
-        fetcher = MPDataFetcher("", output_dir="data/raw")
+        fetcher = MPFetcher("", output_dir="data/raw")
         gaas_data = fetcher.load_saved_data("GaAs")
         alas_data = fetcher.load_saved_data("AlAs")
         

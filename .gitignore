@@ -16,6 +16,7 @@ setu_windows.bat
 setup_windows.ps1
 fix_unicode.py
 patch_all_bugs.py
+fix/
 
 # ===== PYTHON =====
 # Byte-compiled / optimized / DLL files

@@ -16,6 +16,10 @@ from dataclasses import dataclass, asdict
 from pymatgen.core import Structure, Lattice, Element
 from pymatgen.io.cif import CifWriter
 
+from dataclasses import asdict
+from pymatgen.core import Structure, Lattice, Element
+from pymatgen.symmetry.analyzer import SpacegroupAnalyzer
+
 from ..utils import constants
 from ..utils.logger_config import setup_logger
 
@@ -116,6 +120,7 @@ class StructureInterpolator:
         supercell.make_supercell(self.supercell_size)
         return supercell
     
+
     def generate_alloy_structure(
         self,
         x: float,
@@ -123,28 +128,28 @@ class StructureInterpolator:
     ) -> Tuple[Structure, AlloyComposition]:
         """
         Generate AlₓGa₁₋ₓAs structure for given composition.
-        
+
         Args:
             x: Al composition (0.0 to 1.0)
             ordered: If True, use ordered substitution; if False, random
-        
+
         Returns:
-            Tuple of (Structure, AlloyComposition)
+            Tuple of (symmetrized Structure, AlloyComposition)
         """
         # Calculate discrete number of Al atoms
         num_al = round(x * self.total_ga_sites)
         num_ga = self.total_ga_sites - num_al
         actual_x = num_al / self.total_ga_sites
-        
+
         # Check if composition is exactly achievable
         is_discrete = abs(x - actual_x) < 1e-6
-        
+
         if not is_discrete:
             self.logger.debug(
                 f"Composition x={x:.3f} rounded to x={actual_x:.3f} "
                 f"({num_al} Al, {num_ga} Ga atoms)"
             )
-        
+
         # Create composition object
         composition = AlloyComposition(
             x=actual_x,
@@ -153,40 +158,48 @@ class StructureInterpolator:
             num_ga=num_ga,
             is_discrete=is_discrete
         )
-        
+
         # Start from GaAs supercell
         alloy_structure = self.gaas_supercell.copy()
-        
+
         # Find all Ga sites
-        ga_indices = [i for i, site in enumerate(alloy_structure)
-                     if site.specie == Element("Ga")]
-        
+        ga_indices = [
+            i for i, site in enumerate(alloy_structure)
+            if site.specie == Element("Ga")
+        ]
+
         # Select sites for Al substitution
         if ordered:
-            # Ordered substitution (first N sites)
             al_indices = ga_indices[:num_al]
         else:
-            # Random substitution
             rng = np.random.default_rng(seed=42)
             al_indices = rng.choice(ga_indices, size=num_al, replace=False)
-        
+
         # Perform substitution
         for idx in al_indices:
             alloy_structure.replace(idx, Element("Al"))
-        
-        # Interpolate lattice parameter
+
+        # Update lattice parameter (Vegard interpolation)
         lattice_param = self._interpolate_lattice_parameter(actual_x)
-        
-        # Update lattice (keep cubic symmetry)
-        new_lattice = Lattice.cubic(lattice_param)
+        supercell_factor = self.supercell_size[0]  # Assumes cubic supercell
+        supercell_lattice_param = lattice_param * supercell_factor
+        new_lattice = Lattice.cubic(supercell_lattice_param)
         alloy_structure.lattice = new_lattice
-        
+
+        # --- Tambahan utama: simetrisasi struktur ---
+        sga = SpacegroupAnalyzer(alloy_structure, symprec=1e-3, angle_tolerance=5)
+        symmetrized_structure = sga.get_conventional_standard_structure()
+
+        # Update composition formula dengan formula tereduksi yang valid
+        reduced_formula = symmetrized_structure.composition.reduced_formula
+        composition.formula = reduced_formula
+
         self.logger.debug(
-            f"Generated structure: {composition.formula}, "
-            f"a={lattice_param:.4f} Å"
+            f"Generated symmetrized structure: {composition.formula}, "
+            f"a={lattice_param:.4f} Å, SG={sga.get_space_group_symbol()}"
         )
-        
-        return alloy_structure, composition
+
+        return symmetrized_structure, composition
     
     def _interpolate_lattice_parameter(self, x: float) -> float:
         """
@@ -350,12 +363,15 @@ class StructureInterpolator:
             List of AlloyProperties objects
         """
         # Generate composition array
-        x_values = np.arange(x_min, x_max + x_step/2, x_step)
-        
+        num_points = int(round((x_max - x_min) / x_step)) + 1
+        x_values = np.linspace(x_min, x_max, num_points)
+        x_values = np.round(x_values, 3)  # biar tampil rapi seperti 0.000, 0.025, dst.
+
         self.logger.info(
             f"Generating {len(x_values)} compositions from "
             f"x={x_min:.3f} to x={x_max:.3f} (step={x_step})"
         )
+        self.logger.debug(f"x_values generated: {x_values}")
         
         # Setup output directories
         if output_dir:
@@ -417,7 +433,7 @@ class StructureInterpolator:
         )
         
         return alloy_list
-    
+
     def _create_metadata(
         self,
         composition: AlloyComposition,
@@ -425,24 +441,42 @@ class StructureInterpolator:
         properties: Dict[str, Any]
     ) -> Dict[str, Any]:
         """Create metadata dictionary for a composition"""
+        
+        # Ambil informasi space group secara otomatis
+        try:
+            sga = SpacegroupAnalyzer(structure, symprec=1e-3)
+            space_group_info = sga.get_space_group_symbol()
+            space_group_number = sga.get_space_group_number()
+        except Exception as e:
+            self.logger.warning(f"Failed to get space group info: {e}")
+            space_group_info = "Unknown"
+            space_group_number = None
+
+        # Struktur metadata
         metadata = {
             "version": "0.1.1",
             "data_source": self.data_source,
             "composition": asdict(composition),
             "structure_info": {
-                "formula": structure.composition.reduced_formula,
+                # tambahkan dua versi formula:
+                # teoretis (berdasarkan komposisi input) dan aktual (dari pymatgen)
+                "formula_theoretical": composition.formula,
+                "formula_reduced": structure.composition.reduced_formula,
                 "num_sites": len(structure),
                 "lattice_abc": structure.lattice.abc,
                 "lattice_angles": structure.lattice.angles,
                 "volume": structure.lattice.volume,
                 "density": structure.density,
+                "space_group": space_group_info,
+                "space_group_number": space_group_number,
             },
             "generation_method": "ordered_supercell_substitution",
             "supercell_size": list(self.supercell_size),
             "interpolation_method": "vegard_law_with_bowing",
         }
-        
+
         return metadata
+
     
     def _save_cif(self, structure: Structure, filepath: Path):
         """Save structure as CIF file"""

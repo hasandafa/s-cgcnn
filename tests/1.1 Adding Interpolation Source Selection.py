@@ -7,7 +7,7 @@ Tests:
 2. Property calculation with both sources
 3. Comparison functionality
 4. Configuration validation
-
+s-cgcnn\tests\1.1 Adding Interpolation Source Selection.py
 Author: Abdullah Hasan Dafa
 Version: 0.1.1
 """

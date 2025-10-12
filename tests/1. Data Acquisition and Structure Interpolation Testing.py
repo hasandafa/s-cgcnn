@@ -1,7 +1,7 @@
 """
 Version 0.1 Testing Module
 Tests data acquisition and structure interpolation functionality
-
+s-cgcnn\tests\1. Data Acquisition and Structure Interpolation Testing.py
 Run this file to validate that Version 0.1 is working correctly.
 """
 

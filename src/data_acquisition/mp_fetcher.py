@@ -119,7 +119,7 @@ class MPFetcher:
                 # Get structure (conventional cell)
                 structure = mpr.get_structure_by_material_id(
                     mp_id,
-                    conventional_unit_cell=False  # Use primitive cell
+                    conventional_unit_cell=True  # Use conventional cell
                 )
                 
                 self.logger.info(
