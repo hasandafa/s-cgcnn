@@ -1,3 +1,5 @@
+## THIS IS STILL INCOMPLETE DUE TO BUGS! ANYWAY, ENJOY THE EARLY PHASE PIPELINE!
+
 # S-CGCNN: Material-Agnostic Semiconductor Research Pipeline
 
 A comprehensive computational framework for studying semiconductor alloys and their properties using machine learning and first-principles calculations.
@@ -38,7 +40,7 @@ results = run_full_pipeline(
 
 1. **Clone the repository**
 ```bash
-git clone <repository-url>
+git clone https://github.com/hasandafa/s-cgcnn/tree/version-0.1-improved.git
 cd s-cgcnn
 ```
 
@@ -47,35 +49,10 @@ cd s-cgcnn
 pip install -r requirements.txt
 ```
 
-3. **Set up Materials Project API key**
+3. **Set up key.env and add your Materials Project API key**
 ```bash
 # Add your API key to key.env
 echo "MP_API_KEY=your_api_key_here" > key.env
-```
-
-## 📁 Project Structure
-
-```
-s-cgcnn/
-├── src/
-│   ├── calculation/          # Core calculation modules
-│   │   ├── main.py          # Main pipeline entry point
-│   │   ├── constants.py     # Material properties (dynamic)
-│   │   ├── electronic_structure.py  # Tight-binding calculations
-│   │   ├── property_calculator.py   # Alloy property calculations
-│   │   └── structure_interpolator.py # Structure generation
-│   ├── data_acquisition/    # Materials Project data acquisition
-│   └── utils/               # Utility functions
-├── materials/               # Material definitions
-│   ├── properties/          # YAML material files
-│   │   ├── GaAs.yaml       # GaAs properties
-│   │   ├── AlAs.yaml       # AlAs properties
-│   │   └── AlGaAs.yaml     # AlGaAs alloy config
-│   └── material_registry.py # Material management
-├── data/                   # Downloaded material data
-├── tests/                  # Test suite
-├── config.yaml            # System configuration
-└── QUICK_START.md         # Quick start guide
 ```
 
 ## 🔬 Usage Examples
@@ -122,9 +99,6 @@ results = run_full_pipeline(
 Run the comprehensive test suite:
 
 ```bash
-# Test material system functionality
-python test_materials_system.py
-
 # Test full pipeline (quick mode)
 python tests/test_full_pipeline.py --quick
 
@@ -143,7 +117,7 @@ material:
   structure_type: "zincblende"
 
 literature:
-  source: "Adachi Handbook"
+  source: "Adachi, S. The Handbook on Optical Constants of Semiconductors In Tables and Figures"
   temperature: 300
   physical:
     lattice_constant: 6.0583
@@ -205,7 +179,7 @@ features:
   enable_tight_binding: true
 ```
 
-## 📈 Output Structure
+## 📈 Output Structure (Alpha Edition)
 
 Results are saved in `data/outputs/calculations/`:
 
@@ -217,33 +191,16 @@ data/outputs/calculations/
     └── metadata/            # Structure metadata and relaxation reports
 ```
 
-## 🤝 Contributing
-
-1. Fork the repository
-2. Create a feature branch
-3. Add tests for new functionality
-4. Ensure all tests pass
-5. Submit a pull request
-
 ## 📚 Documentation
 
 - **QUICK_START.md**: Quick start guide for users
-- **REFACTORING_GUIDE.md**: Technical documentation and API reference
 - **materials/properties/README.md**: Material file format guide
 
 ## 📄 License
 
 This project is licensed under the MIT License - see the LICENSE file for details.
-
-## 📞 Support
-
-For questions or issues:
-1. Check the documentation in `REFACTORING_GUIDE.md`
-2. Run the test suite to verify your setup
-3. Open an issue on GitHub
-
 ---
 
-**Version**: 2.0.0 (Breaking Changes)  
+**Version**: 0.1-improved (Thicc Changes)  
 **Date**: 2025-10-17  
 **Authors**: Abdullah Hasan Dafa, Razasyattar M. N.
