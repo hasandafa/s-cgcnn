@@ -1,0 +1,64 @@
+# AlGaAs Alloy System Configuration
+# Defines bowing parameters and composition-dependent behavior
+
+alloy_system:
+  name: "AlGaAs"
+  formula: "Al_x Ga_{1-x} As"
+  type: "ternary_alloy"
+  binary_endpoints:
+    - material: "GaAs"
+      composition_var: "x"
+      x_value: 0.0
+    - material: "AlAs"
+      composition_var: "x"
+      x_value: 1.0
+
+# Bowing Parameters (Vegard deviation)
+# Formula: P(x) = (1-x)*P_GaAs + x*P_AlAs - b*x*(1-x)
+bowing_parameters:
+  # Electronic properties (most critical)
+  band_gap: 0.37  # eV - critical for direct/indirect transition
+  electron_affinity: 0.0
+  
+  # Effective masses (composition-dependent - handled by tight-binding)
+  effective_mass_electron: 0.0
+  effective_mass_hole_heavy: 0.0
+  effective_mass_hole_light: 0.0
+  effective_mass_hole_split_off: 0.0
+  
+  # Optical properties
+  dielectric_constant_static: 0.0
+  dielectric_constant_high_freq: 0.0
+  refractive_index: 0.05  # Small bowing
+  
+  # Mechanical properties
+  elastic_constant_c11: 0.0
+  elastic_constant_c12: 0.0
+  elastic_constant_c44: 0.0
+  bulk_modulus: 0.0
+  shear_modulus: 0.0
+  youngs_modulus: 0.0
+  poissons_ratio: 0.0
+  
+  # Thermal properties
+  thermal_conductivity: 0.0
+  specific_heat: 0.0
+  
+  # Transport properties (complex - use linear)
+  electron_mobility: 0.0
+  hole_mobility: 0.0
+
+# Direct-to-Indirect Band Gap Transition
+band_gap_transition:
+  crossover_composition: 0.45  # Al composition where Γ = X valleys
+  direct_range: [0.0, 0.45]  # Direct gap region
+  indirect_range: [0.45, 1.0]  # Indirect gap region
+  description: "Direct (Γ) to indirect (X) transition at x ≈ 0.45"
+
+# Default Calculation Settings
+defaults:
+  data_source: "literature"  # or "mp_api"
+  supercell_size: [2, 2, 2]
+  enable_tight_binding: true
+  enable_charge_density: false
+  enable_relaxation: false

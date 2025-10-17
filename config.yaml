@@ -1,0 +1,83 @@
+paths:
+  data_dir: "data/"
+  output_dir: "outputs/"
+  cache_dir: "cache/"
+  logs_dir: "logs/"
+
+# Material System Configuration (Material-Agnostic)
+# The system now supports any alloy defined in materials/properties/
+system:
+  # Alloy system to use (must have a corresponding .yaml file in materials/properties/)
+  alloy_system: "AlGaAs"
+  
+  # Binary endpoint materials
+  binary_compounds:
+    - name: "GaAs"
+      mp_id: "mp-2534"
+      formula: "GaAs"
+    - name: "AlAs"
+      mp_id: "mp-2172"
+      formula: "AlAs"
+  
+  # Composition points to calculate
+  compositions:
+    x_values: [0.0, 0.05, 0.1, 0.15, 0.2, 0.25, 0.3, 0.35, 0.4, 0.45, 0.5, 0.55, 0.6, 0.65, 0.7, 0.75, 0.8, 0.85, 0.9, 0.95, 1.0]
+  
+  # Structure generation settings
+  supercell_size: [2, 2, 2]
+  space_group: "F-43m"
+  
+  # Data source preference
+  data_source: "literature"  # or "mp_api"
+
+# Example: To use a different alloy system (if you add more materials):
+# system:
+#   alloy_system: "InGaAs"
+#   binary_compounds:
+#     - name: "GaAs"
+#       mp_id: "mp-2534"
+#       formula: "GaAs"
+#     - name: "InAs"
+#       mp_id: "mp-1234"  # Example ID
+#       formula: "InAs"
+
+# Advanced features control
+features:
+  enable_charge_density: false  # Charge density interpolation
+  enable_relaxation: false      # ML-based structure relaxation
+  enable_tight_binding: true    # Tight-binding electronic structure
+
+# Hyperparameters for model training (Future ML features)
+hyperparameters:
+  model:
+    architecture: "S-CGCNN"
+    layers: 3
+    hidden_dim: 64
+    dropout: 0.1
+  training:
+    lr: 0.001
+    batch_size: 32
+    epochs: 100
+    patience: 20
+    cv_folds: 5
+  optimization:
+    enable_optuna: false
+    search_space:
+      layers: [2, 3, 4]
+      hidden_dim: [32, 64, 128]
+      lr: [0.0001, 0.001, 0.01]
+
+# Visualization settings
+visualization:
+  style: "nature"
+  dpi: 300
+  formats: ["png", "html"]
+
+# Device requirements for HEMT
+device_requirements:
+  hemt:
+    band_gap_min: 1.0
+    electron_mobility_min: 5000
+    thermal_conductivity_min: 20
+    lattice_match_tolerance: 0.01
+    band_offset_min: 0.3
