@@ -40,7 +40,7 @@ results = run_full_pipeline(
 
 1. **Clone the repository**
 ```bash
-git clone https://github.com/hasandafa/s-cgcnn/tree/version-0.1-improved.git
+git clone -b version-0.1-improved https://github.com/hasandafa/s-cgcnn.git
 cd s-cgcnn
 ```
 
