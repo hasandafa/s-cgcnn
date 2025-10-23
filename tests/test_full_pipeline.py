@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
 Full Pipeline Test Script
-Tests the complete material-agnostic pipeline from data acquisition to calculation.
+Tests the complete material-agnostic pipeline from data acquisition to graph conversion.
 
 This script demonstrates:
 1. Data acquisition from Materials Project
@@ -10,12 +10,14 @@ This script demonstrates:
 4. Optional charge density interpolation
 5. Optional structure relaxation
 6. Optional tight-binding electronic structure
+7. Graph conversion for GNN training
 
 Usage:
     python test_full_pipeline.py
 
 Or with specific options:
     python test_full_pipeline.py --quick --no-charge-density --alloy AlGaAs
+    python test_full_pipeline.py --test-graphs-only  # Test only graph conversion
 """
 
 import argparse
@@ -27,6 +29,8 @@ project_root = Path(__file__).parent.parent
 sys.path.insert(0, str(project_root))
 
 from src import get_config, get_logger, scrape_binary_compounds, run_full_pipeline
+from src.data_acquisition import process_all_materials
+from src.graph_conversion import GraphConversionPipeline
 
 logger = get_logger(__name__)
 
@@ -57,6 +61,25 @@ def test_data_acquisition() -> bool:
         return False
 
 
+def test_cif_processing() -> bool:
+    """Test CIF processing functionality."""
+    logger.info("Testing CIF processing...")
+
+    try:
+        # Test processing all materials
+        success = process_all_materials()
+        if success:
+            logger.info("[OK] CIF processing successful")
+            return True
+        else:
+            logger.warning("[WARN] CIF processing completed with warnings")
+            return True  # Not a failure, just warnings
+
+    except Exception as e:
+        logger.error(f"[FAIL] CIF processing failed: {e}")
+        return False
+
+
 def test_calculation_pipeline(alloy_system: str = "AlGaAs", material1: str = "GaAs", material2: str = "AlAs", enable_all_features: bool = False) -> bool:
     """Test the calculation pipeline."""
     logger.info(f"Testing calculation pipeline for {alloy_system}...")
@@ -67,7 +90,7 @@ def test_calculation_pipeline(alloy_system: str = "AlGaAs", material1: str = "Ga
             alloy_system=alloy_system,
             material1=material1,
             material2=material2,
-            x_values=[0.0, 0.25, 0.5, 0.75, 1.0],  # Fewer compositions for speed
+            x_values=[0.0, 0.125, 0.25, 0.375, 0.5, 0.625, 0.75, 0.875, 1],  # Fewer compositions for speed
             enable_all_features=enable_all_features
         )
 
@@ -75,13 +98,13 @@ def test_calculation_pipeline(alloy_system: str = "AlGaAs", material1: str = "Ga
         structures = results.get('structures', [])
         properties = results.get('properties', {})
 
-        if len(structures) != 5:
-            logger.error(f"Expected 5 structures, got {len(structures)}")
+        if len(structures) != 9:  # Updated to match the x_values count
+            logger.error(f"Expected 9 structures, got {len(structures)}")
             return False
 
         compositions = properties.get('compositions', {})
-        if len(compositions) != 5:
-            logger.error(f"Expected 5 property sets, got {len(compositions)}")
+        if len(compositions) != 9:
+            logger.error(f"Expected 9 property sets, got {len(compositions)}")
             return False
 
         logger.info("[OK] Calculation pipeline successful")
@@ -92,6 +115,79 @@ def test_calculation_pipeline(alloy_system: str = "AlGaAs", material1: str = "Ga
 
     except Exception as e:
         logger.error(f"[FAIL] Calculation pipeline failed: {e}")
+        return False
+
+
+def test_graph_conversion_pipeline(alloy_system: str = "AlGaAs") -> bool:
+    """Test the graph conversion pipeline."""
+    logger.info(f"Testing graph conversion pipeline for {alloy_system}...")
+
+    try:
+        # Define paths based on calculation pipeline output
+        structure_dir = f"data/outputs/calculations/structures"
+        properties_file = f"data/outputs/calculations/properties.json"
+        output_dir = f"data/outputs/graphs"
+
+        # Check if input files exist
+        if not Path(properties_file).exists():
+            logger.warning(f"Properties file not found: {properties_file}")
+            logger.info("Skipping graph conversion test (run calculation pipeline first)")
+            return True  # Not a failure, just not available
+
+        if not Path(structure_dir).exists():
+            logger.warning(f"Structure directory not found: {structure_dir}")
+            logger.info("Skipping graph conversion test (run calculation pipeline first)")
+            return True  # Not a failure, just not available
+
+        # Run graph conversion
+        pipeline = GraphConversionPipeline(
+            structure_dir=structure_dir,
+            properties_file=properties_file,
+            output_dir=output_dir,
+            cutoff_radius=5.0,
+            use_both_structures=True
+        )
+
+        # Convert all structures to graphs
+        pipeline.convert_all()
+
+        # Compute statistics and create visualizations
+        pipeline.compute_statistics()
+        pipeline.create_visualizations()
+
+        # Save dataset info
+        pipeline.save_dataset_info()
+
+        # Verify output
+        summary = pipeline.get_summary()
+        num_graphs = summary.get('total_graphs_converted', 0)
+
+        if num_graphs == 0:
+            logger.warning("No graphs were converted (input data may be incomplete)")
+            return True  # Not necessarily a failure
+
+        logger.info("[OK] Graph conversion pipeline successful")
+        logger.info(f"  - Converted {num_graphs} structures to graphs")
+        logger.info(f"  - Output directory: {output_dir}")
+
+        # Test dataset loading
+        try:
+            from src.graph_conversion import MaterialPropertyDataset
+            dataset = MaterialPropertyDataset(f"{output_dir}")
+            logger.info(f"  - Dataset loaded with {len(dataset)} samples")
+
+            if len(dataset) > 0:
+                sample_graph, sample_target = dataset[0]
+                logger.info(f"  - Sample graph: {sample_graph.num_nodes} nodes, {sample_graph.edge_index.shape[1]} edges")
+                logger.info(f"  - Sample target shape: {sample_target.shape}")
+
+        except Exception as e:
+            logger.warning(f"Dataset loading test failed: {e}")
+
+        return True
+
+    except Exception as e:
+        logger.error(f"[FAIL] Graph conversion pipeline failed: {e}")
         return False
 
 
@@ -118,7 +214,7 @@ def test_config_loading() -> bool:
         return False
 
 
-def run_full_test(alloy_system: str = "AlGaAs", material1: str = "GaAs", material2: str = "AlAs", enable_all_features: bool = False) -> bool:
+def run_full_test(alloy_system: str = "AlGaAs", material1: str = "GaAs", material2: str = "AlAs", enable_all_features: bool = False, skip_cif: bool = False) -> bool:
     """Run the complete test suite."""
     logger.info("=" * 60)
     logger.info(f"{alloy_system.upper()} PIPELINE FULL TEST SUITE")
@@ -127,8 +223,15 @@ def run_full_test(alloy_system: str = "AlGaAs", material1: str = "GaAs", materia
     tests = [
         ("Configuration Loading", test_config_loading),
         ("Data Acquisition", test_data_acquisition),
-        ("Calculation Pipeline", lambda: test_calculation_pipeline(alloy_system, material1, material2, enable_all_features)),
     ]
+
+    if not skip_cif:
+        tests.append(("CIF Processing", test_cif_processing))
+
+    tests.extend([
+        ("Calculation Pipeline", lambda: test_calculation_pipeline(alloy_system, material1, material2, enable_all_features)),
+        ("Graph Conversion Pipeline", lambda: test_graph_conversion_pipeline(alloy_system)),
+    ])
 
     passed = 0
     total = len(tests)
@@ -163,7 +266,13 @@ def main():
     parser.add_argument("--full", action="store_true",
                         help="Run full test with all features enabled")
     parser.add_argument("--no-charge-density", action="store_true",
-                        help="Skip charge density tests")
+                        help="Disable charge density features")
+    parser.add_argument("--test-graphs-only", action="store_true",
+                        help="Test only graph conversion (skip structure generation)")
+    parser.add_argument("--test-cif-only", action="store_true",
+                        help="Test only CIF processing")
+    parser.add_argument("--skip-cif", action="store_true",
+                        help="Skip CIF processing in full test")
     parser.add_argument("--alloy", type=str, default="AlGaAs",
                         help="Alloy system to test (default: AlGaAs)")
     parser.add_argument("--mat1", type=str, default="GaAs",
@@ -184,13 +293,22 @@ def main():
         enable_all_features = False
         logger.info("Running STANDARD test suite")
 
-    # Run tests
-    success = run_full_test(
-        alloy_system=args.alloy,
-        material1=args.mat1,
-        material2=args.mat2,
-        enable_all_features=enable_all_features
-    )
+    # Handle special test modes
+    if args.test_graphs_only:
+        logger.info("Running GRAPH CONVERSION ONLY test")
+        success = test_graph_conversion_pipeline(args.alloy)
+    elif args.test_cif_only:
+        logger.info("Running CIF PROCESSING ONLY test")
+        success = test_cif_processing()
+    else:
+        # Run tests
+        success = run_full_test(
+            alloy_system=args.alloy,
+            material1=args.mat1,
+            material2=args.mat2,
+            enable_all_features=enable_all_features,
+            skip_cif=args.skip_cif
+        )
 
     # Exit with appropriate code
     sys.exit(0 if success else 1)

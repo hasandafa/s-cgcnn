@@ -75,6 +75,7 @@ project_structure.txt
 # Backup and reference code
 backup/
 codes_to_be_referenced/
+old_documentation/
 
 # Jupyter notebooks (if any)
 .ipynb_checkpoints/

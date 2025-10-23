@@ -13,8 +13,8 @@ This module contains:
 
 from .constants import *
 from .structure_interpolator import StructureInterpolator, create_interpolator_from_config
-from .property_calculator import PropertyCalculator, calculate_all_properties
-from .electronic_structure import TightBindingMaterial, TightBindingAlloy, calculate_electronic_structure, calculate_material_electronic_structure
+from .property_calculator import PropertyCalculator
+from .electronic_structure import GenericTightBinding, AlloyTightBinding, calculate_electronic_structure, calculate_material_electronic_structure
 from .charge_density_interpolator import ChargeDensityInterpolator
 from .structure_relaxer import StructureRelaxer, relax_structure_simple
 from .main import run_full_pipeline, run_calculation_pipeline
@@ -35,11 +35,10 @@ __all__ = [
 
     # From property_calculator
     'PropertyCalculator',
-    'calculate_all_properties',
 
     # From electronic_structure
-    'TightBindingMaterial',
-    'TightBindingAlloy',
+    'GenericTightBinding',
+    'AlloyTightBinding',
     'calculate_electronic_structure',
     'calculate_material_electronic_structure',
 

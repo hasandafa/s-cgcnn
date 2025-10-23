@@ -1,120 +1,150 @@
-# AlAs Material Properties
-# Sources: Literature (Experimental) and Materials Project API
-# Temperature: 300K for literature values, 0K for DFT values
-
-material:
-  name: "AlAs"
-  formula: "AlAs"
-  mp_id: "mp-2172"
-  structure_type: "zincblende"
-  space_group: "F-43m"
-
-# Literature Properties (Experimental at 300K)
+crystal_structure:
+  basis_atoms:
+  - element: Al
+    fractional_position:
+    - 0.0
+    - 0.0
+    - 0.0
+    position:
+    - 0.0
+    - 0.0
+    - 0.0
+  - element: As
+    fractional_position:
+    - 0.75
+    - 0.75
+    - 0.75
+    position:
+    - 4.3199510635361094e-10
+    - 7.373082485691217
+    - 7.488475242123371e-07
+  cif_file_path: data\mp-2172\mp-2172.cif
+  crystal_system: cubic
+  kpath_points:
+  - coordinates:
+    - 0.0
+    - 0.0
+    - 0.0
+    label: \Gamma
+  - coordinates:
+    - 0.375
+    - 0.375
+    - 0.75
+    label: K
+  - coordinates:
+    - 0.5
+    - 0.5
+    - 0.5
+    label: L
+  - coordinates:
+    - 0.625
+    - 0.25
+    - 0.625
+    label: U
+  - coordinates:
+    - 0.5
+    - 0.25
+    - 0.75
+    label: W
+  - coordinates:
+    - 0.5
+    - 0.0
+    - 0.5
+    label: X
+  kpath_type: cubic
+  lattice_angles:
+    alpha: 60.00000106713303
+    beta: 60.000005191776964
+    gamma: 59.99999570961983
+  lattice_parameters:
+    a: 4.01339797
+    b: 4.013397470530206
+    c: 4.013397900107786
+  space_group: F-43m
 literature:
-  source: "Adachi, Sadao - The Handbook on Optical Constants of Semiconductors (2012)"
-  temperature: 300  # K
-  
-  # Physical Properties
-  physical:
-    lattice_constant: 5.6614  # Å
-    density: 3.730  # g/cm³
-    thermal_expansion: 4.28e-6  # K⁻¹
-  
-  # Electronic Properties
   electronic:
-    band_gap: 2.15  # eV (X valley)
-    band_gap_type: "indirect"
-    band_gap_temperature_coeff: -0.0005  # eV/K
-    electron_affinity: 2.62  # eV
-    
-    # Effective masses (in units of m₀)
-    effective_mass_electron: 0.15  # Γ valley
+    band_gap: 2.15
+    band_gap_temperature_coeff: -0.0005
+    band_gap_type: indirect
+    effective_mass_electron: 0.15
     effective_mass_hole_heavy: 0.76
     effective_mass_hole_light: 0.15
     effective_mass_hole_split_off: 0.26
-  
-  # Optical Properties
-  optical:
-    dielectric_constant_static: 10.06  # ε_s
-    dielectric_constant_high_freq: 8.16  # ε_∞
-    refractive_index: 2.886  # @ 2.1 eV
-  
-  # Mechanical Properties
+    electron_affinity: 2.62
   mechanical:
-    elastic_constant_c11: 119.3  # GPa
-    elastic_constant_c12: 57.2  # GPa
-    elastic_constant_c44: 57.2  # GPa
-    bulk_modulus: 77.9  # GPa
-    shear_modulus: 31.1  # GPa
-    youngs_modulus: 82.2  # GPa
+    bulk_modulus: 77.9
+    elastic_constant_c11: 119.3
+    elastic_constant_c12: 57.2
+    elastic_constant_c44: 57.2
     poissons_ratio: 0.324
-  
-  # Thermal Properties
-  thermal:
-    thermal_conductivity: 0.91  # W/(cm·K)
-    specific_heat: 0.424  # J/(g·K)
-    debye_temperature: 450.0  # K
-  
-  # Transport Properties
-  transport:
-    electron_mobility: 280.0  # cm²/(V·s)
-    hole_mobility: 400.0  # cm²/(V·s)
-
-# Materials Project API Properties (DFT at 0K)
-mp_api:
-  source: "materialsproject.org"
-  temperature: 0  # K (DFT)
-  mp_id: "mp-2172"
-  formula: "AlAs"
-  
-  # Note: These are placeholders - fetch dynamically via API
-  # DFT typically underestimates band gaps by 30-50%
+    shear_modulus: 31.1
+    youngs_modulus: 82.2
+  optical:
+    dielectric_constant_high_freq: 8.16
+    dielectric_constant_static: 10.06
+    refractive_index: 2.886
   physical:
-    lattice_constant: null  # Fetch from API
-    density: null  # Fetch from API
-  
+    density: 3.73
+    lattice_constant: 5.6614
+    thermal_expansion: 4.28e-06
+  source: Adachi, Sadao - The Handbook on Optical Constants of Semiconductors (2012)
+  temperature: 300
+  thermal:
+    debye_temperature: 450.0
+    specific_heat: 0.424
+    thermal_conductivity: 0.91
+  transport:
+    electron_mobility: 280.0
+    hole_mobility: 400.0
+material:
+  formula: AlAs
+  mp_id: mp-2172
+  name: AlAs
+  space_group: F-43m
+  structure_type: zincblende
+mp_api:
   electronic:
-    band_gap: null  # DFT underestimate (~1.50 eV vs 2.15 eV)
-    band_gap_type: "indirect"
-    vbm: null
+    band_gap: null
+    band_gap_type: indirect
     cbm: null
-    is_gap_direct: null
-    formation_energy_per_atom: null
     energy_above_hull: null
-  
+    formation_energy_per_atom: null
+    is_gap_direct: null
+    vbm: null
+  formula: AlAs
   mechanical:
     bulk_modulus: null
-    shear_modulus: null
     elastic_tensor: null
-  
+    shear_modulus: null
+  mp_id: mp-2172
   optical:
-    dielectric_constant_static: null
     dielectric_constant_electronic: null
+    dielectric_constant_static: null
     refractive_index: null
-
-# Tight-Binding Parameters (sp³s* model)
+  physical:
+    density: null
+    lattice_constant: null
+  source: materialsproject.org
+  temperature: 0
 tight_binding:
-  method: "Slater-Koster sp³s*"
-  source: "Jancu et al., PRB 57, 6493 (1998)"
-  
+  method: Slater-Koster sp³s*
   parameters:
-    Es_cation: -8.155  # eV - Al s orbital
-    Es_anion: -8.245  # eV - As s orbital
-    Ep_cation: 1.245  # eV - Al p orbital
-    Ep_anion: 1.678  # eV - As p orbital
-    Ess: -6.32  # eV - s-s hopping
-    Esp: 4.35  # eV - s-p hopping
-    Epp_sigma: 1.89  # eV - p-p sigma
-    Epp_pi: -4.15  # eV - p-p pi
-    a: 5.6611  # Å - Lattice constant for TB
-
-# Property Units and Metadata
+    Ep_anion: 1.678
+    Ep_cation: 1.245
+    Epp_pi: -4.15
+    Epp_sigma: 1.89
+    Es_anion: -8.245
+    Es_cation: -8.155
+    Esp: 4.35
+    Ess: -6.32
+    a: 5.6611
+  source: Jancu et al., PRB 57, 6493 (1998)
 units:
-  length: "Å"
-  energy: "eV"
-  mass: "m₀"
-  temperature: "K"
-  pressure: "GPa"
-  mobility: "cm²/(V·s)"
-  thermal_conductivity: "W/(cm·K)"
-  specific_heat: "J/(g·K)"
+  energy: eV
+  length: Å
+  mass: m₀
+  mobility: cm²/(V·s)
+  pressure: GPa
+  specific_heat: J/(g·K)
+  temperature: K
+  thermal_conductivity: W/(cm·K)

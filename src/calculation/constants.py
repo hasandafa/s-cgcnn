@@ -255,19 +255,3 @@ def list_available_alloys() -> list:
     """
     return _registry.list_alloys()
 
-
-def calculate_alloy_property(alloy_name: str, property_name: str,
-                             x: float, source: DataSourceType = "literature") -> Any:
-    """
-    Calculate property for any alloy system defined in materials/properties/.
-
-    Args:
-        alloy_name: Name of the alloy system
-        property_name: Property to calculate
-        x: Composition variable
-        source: Data source for endpoints
-
-    Returns:
-        Calculated property value
-    """
-    return _registry.calculate_alloy_property(alloy_name, property_name, x, source)

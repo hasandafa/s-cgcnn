@@ -9,28 +9,24 @@ Author: Abdullah Hasan Dafa && Razasyattar M. N.
 
 import sys
 from pathlib import Path
-from typing import Dict, Tuple, Optional
+from typing import Dict
 
 # Add materials directory to path
 materials_path = Path(__file__).parent.parent.parent / "materials"
 if str(materials_path) not in sys.path:
     sys.path.insert(0, str(materials_path))
 
-from materials.tight_binding import (
-    GenericTightBinding,
-    AlloyTightBinding,
-    BandStructureData,
-    DOSData,
-    EffectiveMasses
-)
+from materials.tight_binding import *
+from pymatgen.electronic_structure.bandstructure import BandStructureSymmLine
+from pymatgen.electronic_structure.dos import CompleteDos
 from materials import MaterialRegistry
 
 __all__ = [
     'BandStructureData',
     'DOSData',
     'EffectiveMasses',
-    'TightBindingMaterial',
-    'TightBindingAlloy',
+    'BandStructureSymmLine',
+    'CompleteDos',
     'calculate_electronic_structure',
     'calculate_material_electronic_structure',
     'export_band_structure_to_json'
@@ -39,77 +35,9 @@ __all__ = [
 
 
 
-# ============================================================================
-# NEW MATERIAL-AGNOSTIC CLASSES
-# ============================================================================
-
-class TightBindingMaterial:
-    """
-    Tight-binding calculator for any binary material.
-    
-    Works with any material that has tight-binding parameters defined
-    in the materials registry.
-    """
-    
-    def __init__(self, material_name: str, registry: Optional[MaterialRegistry] = None):
-        """
-        Initialize tight-binding calculator for a material.
-        
-        Args:
-            material_name: Name of the material (e.g., 'GaAs', 'AlAs')
-            registry: MaterialRegistry instance (uses global if None)
-        """
-        self.material_name = material_name
-        self._tb = GenericTightBinding(material_name, registry)
-    
-    def calculate_band_structure(self) -> BandStructureData:
-        """Calculate band structure"""
-        return self._tb.calculate_band_structure()
-    
-    def calculate_dos(self, energy_range: Tuple[float, float] = (-10, 5),
-                      n_energy: int = 500, n_kpoints: int = 20) -> DOSData:
-        """Calculate density of states"""
-        return self._tb.calculate_dos(energy_range, n_energy, n_kpoints)
-    
-    def calculate_effective_masses(self) -> EffectiveMasses:
-        """Calculate effective masses"""
-        return self._tb.calculate_effective_masses()
-
-
-class TightBindingAlloy:
-    """
-    Tight-binding calculator for any alloy system.
-    
-    Works with any alloy that has bowing parameters and endpoint materials
-    defined in the materials registry.
-    """
-    
-    def __init__(self, alloy_name: str, x: float, 
-                 registry: Optional[MaterialRegistry] = None):
-        """
-        Initialize tight-binding calculator for an alloy.
-        
-        Args:
-            alloy_name: Name of the alloy system (e.g., 'AlGaAs')
-            x: Composition variable
-            registry: MaterialRegistry instance (uses global if None)
-        """
-        self.alloy_name = alloy_name
-        self.x = x
-        self._tb = AlloyTightBinding(alloy_name, x, registry)
-    
-    def calculate_band_structure(self) -> BandStructureData:
-        """Calculate band structure"""
-        return self._tb.calculate_band_structure()
-    
-    def calculate_dos(self, energy_range: Tuple[float, float] = (-10, 5),
-                      n_energy: int = 500, n_kpoints: int = 20) -> DOSData:
-        """Calculate density of states"""
-        return self._tb.calculate_dos(energy_range, n_energy, n_kpoints)
-    
-    def calculate_effective_masses(self) -> EffectiveMasses:
-        """Calculate effective masses"""
-        return self._tb.calculate_effective_masses()
+# Direct access to tight-binding classes - no unnecessary wrappers
+GenericTightBinding = GenericTightBinding
+AlloyTightBinding = AlloyTightBinding
 
 
 # ============================================================================
@@ -121,10 +49,13 @@ def calculate_electronic_structure(
     x: float,
     calculate_bs: bool = True,
     calculate_dos: bool = True,
-    calculate_masses: bool = True
+    calculate_masses: bool = True,
+    dos_method: str = "gaussian_kde",
+    dos_sigma: float = 0.1,
+    masses_method: str = "literature"
 ) -> Dict:
     """
-    Calculate electronic structure for an alloy composition.
+    Calculate electronic structure for an alloy composition with enhanced options.
 
     Args:
         alloy_name: Name of alloy system
@@ -132,11 +63,14 @@ def calculate_electronic_structure(
         calculate_bs: Calculate band structure
         calculate_dos: Calculate DOS
         calculate_masses: Calculate effective masses
+        dos_method: DOS calculation method ("gaussian_kde", "gaussian_broadening", "histogram")
+        dos_sigma: Broadening parameter for DOS calculation
+        masses_method: Effective mass method ("literature" or "parabolic_fit")
 
     Returns:
         Dictionary with results
     """
-    tb = TightBindingAlloy(alloy_name, x)
+    tb = AlloyTightBinding(alloy_name, x)
     results = {
         'alloy_system': alloy_name,
         'composition': x
@@ -149,11 +83,11 @@ def calculate_electronic_structure(
         results['is_direct'] = bs.is_direct
 
     if calculate_dos:
-        dos = tb.calculate_dos()
+        dos = tb.calculate_dos(method=dos_method, sigma=dos_sigma)
         results['dos'] = dos
 
     if calculate_masses:
-        masses = tb.calculate_effective_masses()
+        masses = tb.calculate_effective_masses(method=masses_method)
         results['effective_masses'] = masses
 
     return results
@@ -163,37 +97,43 @@ def calculate_material_electronic_structure(
     material_name: str,
     calculate_bs: bool = True,
     calculate_dos: bool = True,
-    calculate_masses: bool = True
+    calculate_masses: bool = True,
+    dos_method: str = "gaussian_kde",
+    dos_sigma: float = 0.1,
+    masses_method: str = "literature"
 ) -> Dict:
     """
-    Calculate electronic structure for a binary material.
-    
+    Calculate electronic structure for a binary material with enhanced options.
+
     Args:
         material_name: Name of the material (e.g., 'GaAs', 'AlAs')
         calculate_bs: Calculate band structure
         calculate_dos: Calculate DOS
         calculate_masses: Calculate effective masses
-    
+        dos_method: DOS calculation method ("gaussian_kde", "gaussian_broadening", "histogram")
+        dos_sigma: Broadening parameter for DOS calculation
+        masses_method: Effective mass method ("literature" or "parabolic_fit")
+
     Returns:
         Dictionary with results
     """
-    tb = TightBindingMaterial(material_name)
+    tb = GenericTightBinding(material_name)
     results = {'material': material_name}
-    
+
     if calculate_bs:
         bs = tb.calculate_band_structure()
         results['band_structure'] = bs
         results['band_gap'] = bs.band_gap
         results['is_direct'] = bs.is_direct
-    
+
     if calculate_dos:
-        dos = tb.calculate_dos()
+        dos = tb.calculate_dos(method=dos_method, sigma=dos_sigma)
         results['dos'] = dos
-    
+
     if calculate_masses:
-        masses = tb.calculate_effective_masses()
+        masses = tb.calculate_effective_masses(method=masses_method)
         results['effective_masses'] = masses
-    
+
     return results
 
 
@@ -228,16 +168,34 @@ def export_band_structure_to_json(bs_data: BandStructureData, filepath: str):
 # ============================================================================
 
 if __name__ == "__main__":
-    # Example 1: Generic alloy calculation
-    print("Example 1: AlGaAs at x=0.5")
-    results = calculate_electronic_structure("AlGaAs", 0.5)
+    # Example 1: Generic alloy calculation with enhanced DOS
+    print("Example 1: AlGaAs at x=0.5 with advanced DOS")
+    results = calculate_electronic_structure(
+        "AlGaAs", 0.5,
+        dos_method="gaussian_kde",
+        masses_method="parabolic_fit"
+    )
     print(f"  Band gap: {results['band_gap']:.3f} eV")
     print(f"  Direct: {results['is_direct']}")
+    print(f"  Electron mass: {results['effective_masses'].electron:.3f} m₀")
 
-    # Example 2: Binary material calculation
-    print("\nExample 2: Pure GaAs")
-    results_gaas = calculate_material_electronic_structure("GaAs")
+    # Example 2: Binary material calculation with pymatgen integration
+    print("\nExample 2: Pure GaAs with pymatgen objects")
+    results_gaas = calculate_material_electronic_structure(
+        "GaAs",
+        dos_method="gaussian_broadening",
+        dos_sigma=0.05
+    )
     print(f"  Band gap: {results_gaas['band_gap']:.3f} eV")
     print(f"  Direct: {results_gaas['is_direct']}")
+
+    # Example 3: Direct class usage with new methods
+    print("\nExample 3: Direct class usage")
+    tb_material = GenericTightBinding("GaAs")
+    bs_pmg = tb_material.get_pymatgen_band_structure()
+    dos_pmg = tb_material.get_pymatgen_dos(method="histogram")
+
+    print(f"  pymatgen BS type: {type(bs_pmg).__name__}")
+    print(f"  pymatgen DOS type: {type(dos_pmg).__name__}")
 
     print("\nAll calculations completed successfully!")

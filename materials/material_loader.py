@@ -21,6 +21,7 @@ class Material:
     mp_id: Optional[str] = None
     structure_type: Optional[str] = None
     space_group: Optional[str] = None
+    crystal_structure: Optional[Dict[str, Any]] = None
     literature_props: Optional[Dict[str, Any]] = None
     mp_api_props: Optional[Dict[str, Any]] = None
     tight_binding_params: Optional[Dict[str, Any]] = None
@@ -89,7 +90,6 @@ class AlloySystem:
     band_gap_transition: Optional[Dict[str, Any]] = None
     composition_rules: Optional[Dict[str, Any]] = None
     applications: Optional[Dict[str, Any]] = None
-    defaults: Optional[Dict[str, Any]] = None
     
     def get_bowing_parameter(self, property_name: str) -> float:
         """
@@ -184,6 +184,7 @@ class MaterialLoader:
             mp_id=material_info.get('mp_id'),
             structure_type=material_info.get('structure_type'),
             space_group=material_info.get('space_group'),
+            crystal_structure=data.get('crystal_structure'),
             literature_props=data.get('literature'),
             mp_api_props=data.get('mp_api'),
             tight_binding_params=data.get('tight_binding'),
@@ -230,8 +231,7 @@ class MaterialLoader:
             bowing_parameters=data.get('bowing_parameters', {}),
             band_gap_transition=data.get('band_gap_transition'),
             composition_rules=data.get('composition_rules'),
-            applications=data.get('applications'),
-            defaults=data.get('defaults')
+            applications=data.get('applications')
         )
         
         # Cache and return

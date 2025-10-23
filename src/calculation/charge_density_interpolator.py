@@ -85,7 +85,7 @@ class ChargeDensityInterpolator:
 
         self.grid_shape = self.density1.shape
         logger.info(f"Initialized charge density interpolator")
-        logger.info(f"  Materials: {material1_name} ↔ {material2_name}")
+        logger.info(f"  Materials: {material1_name} <-> {material2_name}")
         logger.info(f"  Grid shape: {self.grid_shape}")
 
     def _load_charge_density(self,
@@ -151,7 +151,7 @@ class ChargeDensityInterpolator:
             raise
 
     def interpolate(self, x: float,
-                   target_structure: Structure) -> ChargeDensityData:
+                    target_structure: Structure) -> ChargeDensityData:
         """
         Interpolate charge density for composition x.
 
@@ -178,6 +178,41 @@ class ChargeDensityInterpolator:
             structure=target_structure,
             grid_shape=self.grid_shape
         )
+
+    def get_per_atom_charge_density(self, x: float,
+                                   target_structure: Structure) -> np.ndarray:
+        """
+        Extract per-atom charge density values for GNN node features.
+
+        Args:
+            x: Composition variable (0.0 to 1.0)
+            target_structure: Target alloy structure
+
+        Returns:
+            Array of charge density values, one per atom
+        """
+        # Get interpolated charge density
+        charge_data = self.interpolate(x, target_structure)
+
+        # Extract charge density at atomic positions
+        per_atom_values = []
+        nx, ny, nz = charge_data.grid_shape
+
+        # Get lattice vectors for coordinate transformation
+        lattice = charge_data.structure.lattice
+
+        for site in charge_data.structure:
+            # Convert fractional coordinates to grid indices
+            frac_coords = site.frac_coords
+            grid_x = int(frac_coords[0] * nx) % nx
+            grid_y = int(frac_coords[1] * ny) % ny
+            grid_z = int(frac_coords[2] * nz) % nz
+
+            # Get charge density value at this grid point
+            density_value = charge_data.data[grid_x, grid_y, grid_z]
+            per_atom_values.append(float(density_value))
+
+        return np.array(per_atom_values)
 
     @staticmethod
     def from_material_pair(material1_name: str, 

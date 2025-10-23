@@ -91,7 +91,7 @@ class StructureRelaxer:
             raise ValueError(f"Unknown method: {method}")
 
     def relax(self, structure: Structure,
-              relax_cell: bool = True) -> RelaxationResult:
+              relax_cell: bool = False) -> RelaxationResult:
         """
         Relax structure.
 
@@ -148,7 +148,7 @@ class StructureRelaxer:
             max_force=max_force_val,
             # Use the correctly calculated number of steps
             n_steps=n_steps,
-            converged=True,  # CHGNet relaxer doesn't have a simple converged flag, assume true if it finishes
+            converged=(max_force_val <= self.fmax), # Check if the final force is below the threshold
             method='chgnet'
         )
 
@@ -220,7 +220,7 @@ class StructureRelaxer:
         return structure
 
     def relax_batch(self, structures: Dict[float, Structure],
-                    relax_cell: bool = True,
+                    relax_cell: bool = False,
                     output_dir: Optional[Path] = None) -> Dict[float, RelaxationResult]:
         """
         Relax multiple structures.
@@ -261,9 +261,9 @@ class StructureRelaxer:
 # ============================================================================
 
 def relax_structure_simple(structure: Structure,
-                            method: str = 'auto',
-                            relax_cell: bool = True,
-                            fmax: float = 0.05) -> Structure:
+                           method: str = 'auto',
+                           relax_cell: bool = False,
+                           fmax: float = 0.05) -> Structure:
     """
     Simple wrapper: relax and return final structure.
 

@@ -1,9 +1,9 @@
 """
-Structure Interpolation Module - Version 1.0.0 (Material-Agnostic)
-Enhanced with charge density interpolation and structure relaxation.
+Structure Interpolation Module - Version 2.0.0 (Material-Agnostic + Enhanced)
+Enhanced with charge density interpolation, structure relaxation, and advanced scipy methods.
 
 Generates binary alloy structures with configurable property sources,
-charge density interpolation, and ML-based relaxation.
+charge density interpolation, ML-based relaxation, and scipy-based interpolation.
 
 Now fully material-agnostic - works with any binary alloy system!
 
@@ -16,9 +16,10 @@ from typing import Dict, List, Tuple, Optional, Any
 import json
 from dataclasses import dataclass, asdict
 
+from scipy.interpolate import CubicSpline, UnivariateSpline
+
 from pymatgen.core import Structure, Lattice, Element
 from pymatgen.io.cif import CifWriter
-from pymatgen.symmetry.analyzer import SpacegroupAnalyzer
 
 from .constants import get_material_registry, DataSourceType
 from ..utils import get_logger
@@ -65,6 +66,7 @@ class AlloyProperties:
     metadata: Dict[str, Any]
     charge_density: Optional[Any] = None
     relaxed_structure: Optional[Structure] = None
+    per_atom_charge_density: Optional[np.ndarray] = None
 
 
 # ============================================================================
@@ -94,8 +96,8 @@ class StructureInterpolator:
         supercell_size: Tuple[int, int, int] = (2, 2, 2),
         data_source: DataSourceType = "literature",
         config: Optional[Dict] = None,
-        enable_charge_density: bool = True,
-        enable_relaxation: bool = False
+        enable_charge_density: Optional[bool] = None,
+        enable_relaxation: Optional[bool] = None
     ):
         """
         Initialize the structure interpolator for any binary alloy.
@@ -120,6 +122,13 @@ class StructureInterpolator:
         self.supercell_size = supercell_size
         self.data_source = data_source
         self.config = config or {}
+
+        # Use config defaults if not explicitly set
+        if enable_charge_density is None:
+            enable_charge_density = config.get('features.enable_charge_density', True) if config else True
+        if enable_relaxation is None:
+            enable_relaxation = config.get('features.enable_relaxation', True) if config else True
+
         self.enable_charge_density = enable_charge_density and CHARGE_DENSITY_AVAILABLE
         self.enable_relaxation = enable_relaxation and STRUCTURE_RELAXER_AVAILABLE
 
@@ -170,8 +179,8 @@ class StructureInterpolator:
 
         logger.info(f"Initialized StructureInterpolator (v1.0.0 - Material-Agnostic)")
         logger.info(f"Alloy system: {alloy_name}")
-        logger.info(f"Materials: {material1_name} (x=0) ↔ {material2_name} (x=1)")
-        logger.info(f"Substitution: {self.element_to_substitute} → {self.substituting_element}")
+        logger.info(f"Materials: {material1_name} (x=0) <-> {material2_name} (x=1)")
+        logger.info(f"Substitution: {self.element_to_substitute} -> {self.substituting_element}")
         logger.info(f"Data source: {data_source}")
         logger.info(f"Supercell: {supercell_size} ({self.total_sites} substitution sites)")
 
@@ -200,7 +209,7 @@ class StructureInterpolator:
         self.element_to_substitute = list(diff_in_1)[0]
         self.substituting_element = list(diff_in_2)[0]
         
-        logger.info(f"Auto-detected substitution: {self.element_to_substitute} → {self.substituting_element}")
+        logger.info(f"Auto-detected substitution: {self.element_to_substitute} -> {self.substituting_element}")
 
     def _create_supercell(self, structure: Structure) -> Structure:
         """Create supercell from primitive structure"""
@@ -211,14 +220,14 @@ class StructureInterpolator:
     def generate_alloy_structure(
         self,
         x: float,
-        ordered: bool = True
+        ordered: bool = False
     ) -> Tuple[Structure, AlloyComposition]:
         """
         Generate alloy structure for given composition.
 
         Args:
             x: Composition variable (0.0 to 1.0)
-            ordered: If True, use ordered substitution; if False, random
+            ordered: If True, use ordered substitution; if False, random (default: random for natural disorder)
 
         Returns:
             Tuple of (symmetrized Structure, AlloyComposition)
@@ -275,20 +284,20 @@ class StructureInterpolator:
         new_lattice = Lattice.cubic(supercell_lattice_param)
         alloy_structure.lattice = new_lattice
 
-        # Symmetrize structure
-        sga = SpacegroupAnalyzer(alloy_structure, symprec=1e-3, angle_tolerance=5)
-        symmetrized_structure = sga.get_conventional_standard_structure()
-
-        # Update formula with reduced formula
-        reduced_formula = symmetrized_structure.composition.reduced_formula
+        # For alloys, we maintain the cubic lattice but don't force symmetrization
+        # since random substitution creates disordered structures that should remain disordered
+        # The cubic lattice ensures proper zinc blende geometry
+        
+        # Update formula with reduced formula from the cubic structure
+        reduced_formula = alloy_structure.composition.reduced_formula
         composition.formula = reduced_formula
 
         logger.info(
             f"Generated structure: {composition.formula}, "
-            f"a={lattice_param:.4f} Å, SG={sga.get_space_group_symbol()}"
+            f"a={lattice_param:.4f} Å (cubic, zinc blende)"
         )
 
-        return symmetrized_structure, composition
+        return alloy_structure, composition
 
     def _generate_formula(self, x: float) -> str:
         """Generate chemical formula for the alloy"""
@@ -303,12 +312,13 @@ class StructureInterpolator:
         else:
             return f"{self.substituting_element}{x:.3f}{self.element_to_substitute}{1-x:.3f}"
 
-    def _interpolate_lattice_parameter(self, x: float) -> float:
+    def _interpolate_lattice_parameter(self, x: float, method: str = "vegard") -> float:
         """
-        Interpolate lattice parameter using Vegard's Law.
+        Interpolate lattice parameter using various methods.
 
         Args:
             x: Composition variable
+            method: "vegard" (linear), "cubic", or "bowing"
 
         Returns:
             Lattice parameter in Angstrom
@@ -320,9 +330,87 @@ class StructureInterpolator:
             a1 = self.structure1.lattice.a
             a2 = self.structure2.lattice.a
 
-        # Linear interpolation
-        a_alloy = (1 - x) * a1 + x * a2
+        if method == "vegard":
+            # Simple Vegard's Law (linear)
+            a_alloy = (1 - x) * a1 + x * a2
+            
+        elif method == "bowing":
+            # Include bowing parameter from registry
+            bowing = self.alloy_system.bowing_parameters.get("lattice_constant", 0.0)
+            a_alloy = (1 - x) * a1 + x * a2 - bowing * x * (1 - x)
+            
+        elif method == "cubic":
+            # Cubic spline interpolation through endpoints and midpoint
+            x_points = np.array([0.0, 0.5, 1.0])
+            # Calculate midpoint with small deviation
+            a_mid = 0.5 * (a1 + a2)
+            bowing = self.alloy_system.bowing_parameters.get("lattice_constant", 0.0)
+            a_mid -= 0.25 * bowing  # Add bowing effect
+            
+            a_points = np.array([a1, a_mid, a2])
+            cs = CubicSpline(x_points, a_points, bc_type='natural')
+            a_alloy = float(cs(x))
+            
+        else:
+            raise ValueError(f"Unknown interpolation method: {method}")
+        
         return a_alloy
+    
+    def interpolate_property_with_scipy(
+        self,
+        property_name: str,
+        x: float,
+        method: str = "cubic"
+    ) -> Any:
+        """
+        Interpolate any property using scipy methods.
+        
+        Args:
+            property_name: Name of property to interpolate
+            x: Composition variable
+            method: "linear", "cubic", or "spline"
+            
+        Returns:
+            Interpolated property value
+        """
+        # Get endpoint values
+        val1 = self.props1.get(property_name)
+        val2 = self.props2.get(property_name)
+        
+        if val1 is None or val2 is None:
+            return None
+        
+        # Get bowing parameter
+        bowing = self.alloy_system.bowing_parameters.get(property_name, 0.0)
+        
+        if method == "linear":
+            return (1 - x) * val1 + x * val2 - bowing * x * (1 - x)
+        
+        elif method == "cubic":
+            # Three-point cubic spline
+            x_points = np.array([0.0, 0.5, 1.0])
+            val_mid = 0.5 * (val1 + val2) - 0.25 * bowing
+            y_points = np.array([val1, val_mid, val2])
+            
+            cs = CubicSpline(x_points, y_points, bc_type='natural')
+            return float(cs(x))
+        
+        elif method == "spline":
+            # Univariate spline with smoothing
+            x_points = np.array([0.0, 0.25, 0.5, 0.75, 1.0])
+            y_points = np.array([
+                val1,
+                0.75 * val1 + 0.25 * val2 - 0.1875 * bowing,
+                0.5 * val1 + 0.5 * val2 - 0.25 * bowing,
+                0.25 * val1 + 0.75 * val2 - 0.1875 * bowing,
+                val2
+            ])
+            
+            spline = UnivariateSpline(x_points, y_points, s=0, k=3)
+            return float(spline(x))
+        
+        else:
+            raise ValueError(f"Unknown method: {method}")
 
     def calculate_properties(
         self,
@@ -392,9 +480,14 @@ class StructureInterpolator:
 
             # Charge density interpolation
             charge_density = None
+            per_atom_charge_density = None
             if self.enable_charge_density and self.charge_density_interpolator:
                 try:
                     charge_density = self.charge_density_interpolator.interpolate(
+                        composition.x, structure
+                    )
+                    # Extract per-atom charge density values for GNN features
+                    per_atom_charge_density = self.charge_density_interpolator.get_per_atom_charge_density(
                         composition.x, structure
                     )
                     logger.info(f"Interpolated charge density for x={composition.x:.3f}")
@@ -417,7 +510,8 @@ class StructureInterpolator:
                 properties=properties,
                 metadata=metadata,
                 charge_density=charge_density,
-                relaxed_structure=relaxed_structure
+                relaxed_structure=relaxed_structure,
+                per_atom_charge_density=per_atom_charge_density
             )
 
             alloy_list.append(alloy)
@@ -444,14 +538,10 @@ class StructureInterpolator:
         properties: Dict[str, Any]
     ) -> Dict[str, Any]:
         """Create metadata dictionary"""
-        try:
-            sga = SpacegroupAnalyzer(structure, symprec=1e-3)
-            space_group_info = sga.get_space_group_symbol()
-            space_group_number = sga.get_space_group_number()
-        except Exception as e:
-            logger.warning(f"Failed to get space group info: {e}")
-            space_group_info = "Unknown"
-            space_group_number = None
+        # For disordered alloys, space group analysis may detect lower symmetry due to random disorder
+        # We maintain cubic lattice but acknowledge the disordered nature
+        space_group_info = "P 1 (disordered cubic, zinc blende)"
+        space_group_number = 1  # Triclinic, but actually disordered cubic
 
         metadata = {
             "version": "1.0.0",
@@ -469,7 +559,7 @@ class StructureInterpolator:
                 "space_group": space_group_info,
                 "space_group_number": space_group_number,
             },
-            "generation_method": "ordered_supercell_substitution",
+            "generation_method": "random_supercell_substitution",
             "supercell_size": list(self.supercell_size),
             "interpolation_method": "vegard_law_with_bowing",
         }

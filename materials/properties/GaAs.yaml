@@ -1,120 +1,150 @@
-# GaAs Material Properties
-# Sources: Literature (Experimental) and Materials Project API
-# Temperature: 300K for literature values, 0K for DFT values
-
-material:
-  name: "GaAs"
-  formula: "GaAs"
-  mp_id: "mp-2534"
-  structure_type: "zincblende"
-  space_group: "F-43m"
-
-# Literature Properties (Experimental at 300K)
+crystal_structure:
+  basis_atoms:
+  - element: Ga
+    fractional_position:
+    - 0.0
+    - 0.0
+    - 0.0
+    position:
+    - 0.0
+    - 0.0
+    - 0.0
+  - element: As
+    fractional_position:
+    - 0.7500000000000001
+    - 0.7499999999999999
+    - 0.75
+    position:
+    - 3.91380905462313e-09
+    - 7.469705258361348
+    - 7.550345693108085e-07
+  cif_file_path: data\mp-2534\mp-2534.cif
+  crystal_system: cubic
+  kpath_points:
+  - coordinates:
+    - 0.0
+    - 0.0
+    - 0.0
+    label: \Gamma
+  - coordinates:
+    - 0.375
+    - 0.375
+    - 0.75
+    label: K
+  - coordinates:
+    - 0.5
+    - 0.5
+    - 0.5
+    label: L
+  - coordinates:
+    - 0.625
+    - 0.25
+    - 0.625
+    label: U
+  - coordinates:
+    - 0.5
+    - 0.25
+    - 0.75
+    label: W
+  - coordinates:
+    - 0.5
+    - 0.0
+    - 0.5
+    label: X
+  kpath_type: cubic
+  lattice_angles:
+    alpha: 60.000000669249324
+    beta: 60.00000471146336
+    gamma: 60.00000538628521
+  lattice_parameters:
+    a: 4.06599292
+    b: 4.065992417945173
+    c: 4.065992600890855
+  space_group: F-43m
 literature:
-  source: "Adachi, Sadao - The Handbook on Optical Constants of Semiconductors (2012)"
-  temperature: 300  # K
-  
-  # Physical Properties
-  physical:
-    lattice_constant: 5.6533  # Å
-    density: 5.3175  # g/cm³
-    thermal_expansion: 6.03e-6  # K⁻¹
-  
-  # Electronic Properties
   electronic:
-    band_gap: 1.43  # eV (Γ valley)
-    band_gap_type: "direct"
-    band_gap_temperature_coeff: -0.0005405  # eV/K
-    electron_affinity: 4.07  # eV
-    
-    # Effective masses (in units of m₀)
+    band_gap: 1.43
+    band_gap_temperature_coeff: -0.0005405
+    band_gap_type: direct
     effective_mass_electron: 0.067
     effective_mass_hole_heavy: 0.5
     effective_mass_hole_light: 0.08
     effective_mass_hole_split_off: 0.15
-  
-  # Optical Properties
-  optical:
-    dielectric_constant_static: 12.9  # ε_s
-    dielectric_constant_high_freq: 10.86  # ε_∞
-    refractive_index: 3.628  # @ 1.4 eV
-  
-  # Mechanical Properties
+    electron_affinity: 4.07
   mechanical:
-    elastic_constant_c11: 118.8  # GPa
-    elastic_constant_c12: 53.8  # GPa
-    elastic_constant_c44: 59.4  # GPa
-    bulk_modulus: 75.5  # GPa
-    shear_modulus: 32.5  # GPa
-    youngs_modulus: 85.3  # GPa
+    bulk_modulus: 75.5
+    elastic_constant_c11: 118.8
+    elastic_constant_c12: 53.8
+    elastic_constant_c44: 59.4
     poissons_ratio: 0.312
-  
-  # Thermal Properties
-  thermal:
-    thermal_conductivity: 0.45  # W/(cm·K)
-    specific_heat: 0.327  # J/(g·K)
-    debye_temperature: 370.0  # K
-  
-  # Transport Properties
-  transport:
-    electron_mobility: 8500.0  # cm²/(V·s)
-    hole_mobility: 400.0  # cm²/(V·s)
-
-# Materials Project API Properties (DFT at 0K)
-mp_api:
-  source: "materialsproject.org"
-  temperature: 0  # K (DFT)
-  mp_id: "mp-2534"
-  formula: "GaAs"
-  
-  # Note: These are placeholders - fetch dynamically via API
-  # DFT typically underestimates band gaps by 30-50%
+    shear_modulus: 32.5
+    youngs_modulus: 85.3
+  optical:
+    dielectric_constant_high_freq: 10.86
+    dielectric_constant_static: 12.9
+    refractive_index: 3.628
   physical:
-    lattice_constant: null  # Fetch from API
-    density: null  # Fetch from API
-  
+    density: 5.3175
+    lattice_constant: 5.6533
+    thermal_expansion: 6.03e-06
+  source: Adachi, Sadao - The Handbook on Optical Constants of Semiconductors (2012)
+  temperature: 300
+  thermal:
+    debye_temperature: 370.0
+    specific_heat: 0.327
+    thermal_conductivity: 0.45
+  transport:
+    electron_mobility: 8500.0
+    hole_mobility: 400.0
+material:
+  formula: GaAs
+  mp_id: mp-2534
+  name: GaAs
+  space_group: F-43m
+  structure_type: zincblende
+mp_api:
   electronic:
-    band_gap: null  # DFT underestimate (~0.19 eV vs 1.43 eV)
-    band_gap_type: "direct"
-    vbm: null
+    band_gap: null
+    band_gap_type: direct
     cbm: null
-    is_gap_direct: null
-    formation_energy_per_atom: null
     energy_above_hull: null
-  
+    formation_energy_per_atom: null
+    is_gap_direct: null
+    vbm: null
+  formula: GaAs
   mechanical:
     bulk_modulus: null
-    shear_modulus: null
     elastic_tensor: null
-  
+    shear_modulus: null
+  mp_id: mp-2534
   optical:
-    dielectric_constant_static: null
     dielectric_constant_electronic: null
+    dielectric_constant_static: null
     refractive_index: null
-
-# Tight-Binding Parameters (sp³s* model)
+  physical:
+    density: null
+    lattice_constant: null
+  source: materialsproject.org
+  temperature: 0
 tight_binding:
-  method: "Slater-Koster sp³s*"
-  source: "Jancu et al., PRB 57, 6493 (1998)"
-  
+  method: Slater-Koster sp³s*
   parameters:
-    Es_cation: -8.3414  # eV - Ga s orbital
-    Es_anion: -8.3431  # eV - As s orbital
-    Ep_cation: 1.0414  # eV - Ga p orbital
-    Ep_anion: 1.7023  # eV - As p orbital
-    Ess: -6.4513  # eV - s-s hopping
-    Esp: 4.48  # eV - s-p hopping
-    Epp_sigma: 1.9546  # eV - p-p sigma
-    Epp_pi: -4.2588  # eV - p-p pi
-    a: 5.6533  # Å - Lattice constant for TB
-
-# Property Units and Metadata
+    Ep_anion: 1.7023
+    Ep_cation: 1.0414
+    Epp_pi: -4.2588
+    Epp_sigma: 1.9546
+    Es_anion: -8.3431
+    Es_cation: -8.3414
+    Esp: 4.48
+    Ess: -6.4513
+    a: 5.6533
+  source: Jancu et al., PRB 57, 6493 (1998)
 units:
-  length: "Å"
-  energy: "eV"
-  mass: "m₀"
-  temperature: "K"
-  pressure: "GPa"
-  mobility: "cm²/(V·s)"
-  thermal_conductivity: "W/(cm·K)"
-  specific_heat: "J/(g·K)"
+  energy: eV
+  length: Å
+  mass: m₀
+  mobility: cm²/(V·s)
+  pressure: GPa
+  specific_heat: J/(g·K)
+  temperature: K
+  thermal_conductivity: W/(cm·K)

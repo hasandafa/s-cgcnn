@@ -21,7 +21,7 @@ system:
   
   # Composition points to calculate
   compositions:
-    x_values: [0.0, 0.05, 0.1, 0.15, 0.2, 0.25, 0.3, 0.35, 0.4, 0.45, 0.5, 0.55, 0.6, 0.65, 0.7, 0.75, 0.8, 0.85, 0.9, 0.95, 1.0]
+    x_values: [0.0, 0.125, 0.25, 0.375, 0.5, 0.625, 0.75, 0.875, 1]
   
   # Structure generation settings
   supercell_size: [2, 2, 2]
@@ -43,9 +43,9 @@ system:
 
 # Advanced features control
 features:
-  enable_charge_density: false  # Charge density interpolation
-  enable_relaxation: false      # ML-based structure relaxation
-  enable_tight_binding: true    # Tight-binding electronic structure
+   enable_charge_density: true  # Charge density interpolation
+   enable_relaxation: true      # ML-based structure relaxation
+   enable_tight_binding: true    # Tight-binding electronic structure
 
 # Hyperparameters for model training (Future ML features)
 hyperparameters:
@@ -66,18 +66,3 @@ hyperparameters:
       layers: [2, 3, 4]
       hidden_dim: [32, 64, 128]
       lr: [0.0001, 0.001, 0.01]
-
-# Visualization settings
-visualization:
-  style: "nature"
-  dpi: 300
-  formats: ["png", "html"]
-
-# Device requirements for HEMT
-device_requirements:
-  hemt:
-    band_gap_min: 1.0
-    electron_mobility_min: 5000
-    thermal_conductivity_min: 20
-    lattice_match_tolerance: 0.01
-    band_offset_min: 0.3

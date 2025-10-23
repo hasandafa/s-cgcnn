@@ -57,8 +57,5 @@ band_gap_transition:
 
 # Default Calculation Settings
 defaults:
-  data_source: "literature"  # or "mp_api"
-  supercell_size: [2, 2, 2]
-  enable_tight_binding: true
-  enable_charge_density: false
-  enable_relaxation: false
+   data_source: "literature"  # or "mp_api"
+   supercell_size: [2, 2, 2]

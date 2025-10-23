@@ -10,7 +10,7 @@ NOW FULLY MATERIAL-AGNOSTIC!
 Author: Abdullah Hasan Dafa && Razasyattar M. N.
 """
 
-from typing import Dict, List, Any, Optional, Literal
+from typing import Dict, List, Any, Literal
 from .constants import get_material_registry
 from ..utils import get_logger
 
@@ -18,7 +18,7 @@ logger = get_logger(__name__)
 
 # Import electronic structure calculator
 try:
-    from .electronic_structure import TightBindingAlloy
+    from .electronic_structure import AlloyTightBinding
     ELECTRONIC_STRUCTURE_AVAILABLE = True
 except ImportError:
     ELECTRONIC_STRUCTURE_AVAILABLE = False
@@ -74,7 +74,7 @@ class PropertyCalculator:
             logger.info(f"Electronic structure calculator enabled for {alloy_name} (Tight-Binding)")
         
         logger.info(f"PropertyCalculator initialized for {alloy_name}")
-        logger.info(f"  Materials: {self.material1_name} (x=0) ↔ {self.material2_name} (x=1)")
+        logger.info(f"  Materials: {self.material1_name} (x=0) <-> {self.material2_name} (x=1)")
 
     def calculate_property(
         self,
@@ -93,6 +93,19 @@ class PropertyCalculator:
         Returns:
             Calculated property value
         """
+        tb_properties = [
+            "band_gap", "effective_mass_electron", 
+            "effective_mass_hole_heavy", "effective_mass_hole_light"
+        ]
+
+        if self.use_tb_electronic_structure and property_name in tb_properties:
+            try:
+                # If it's an electronic property, use the advanced TB calculator
+                return self._calculate_tb_property(property_name, x)
+            except Exception as e:
+                logger.warning(f"TB calculation failed for {property_name} at x={x}: {e}")
+                # Fallback to simple interpolation if TB fails
+        
         # Use the material registry for calculation
         return self.registry.calculate_alloy_property(
             self.alloy_name, 
@@ -117,7 +130,7 @@ class PropertyCalculator:
             raise RuntimeError("Tight-binding calculator not available")
 
         # Use the generic tight-binding alloy class
-        tb = TightBindingAlloy(self.alloy_name, x, self.registry)
+        tb = AlloyTightBinding(self.alloy_name, x, self.registry)
 
         if property_name == "band_gap":
             bs = tb.calculate_band_structure()
@@ -186,142 +199,10 @@ class PropertyCalculator:
         return results
 
 
-# ============================================================================
-# CONVENIENCE FUNCTIONS (Backwards Compatible)
-# ============================================================================
-
-def calculate_band_gap(x: float, 
-                       data_source: DataSourceType = "literature",
-                       alloy_name: str = "AlGaAs") -> float:
-    """
-    Calculate band gap for any alloy composition.
-
-    Args:
-        x: Composition variable (0.0 to 1.0)
-        data_source: "literature" or "mp_api"
-        alloy_name: Name of alloy system (default: 'AlGaAs' for compatibility)
-
-    Returns:
-        Band gap in eV
-    """
-    calc = PropertyCalculator(alloy_name, data_source)
-    return calc.calculate_property("band_gap", x)
+# Main calculator class is sufficient - removed redundant convenience functions
 
 
-def calculate_lattice_constant(x: float, 
-                               data_source: DataSourceType = "literature",
-                               alloy_name: str = "AlGaAs") -> float:
-    """
-    Calculate lattice constant for any alloy composition.
-
-    Args:
-        x: Composition variable (0.0 to 1.0)
-        data_source: "literature" or "mp_api"
-        alloy_name: Name of alloy system (default: 'AlGaAs' for compatibility)
-
-    Returns:
-        Lattice constant in Angstrom
-    """
-    calc = PropertyCalculator(alloy_name, data_source)
-    return calc.calculate_property("lattice_constant", x)
-
-
-def calculate_electron_mobility(x: float, 
-                                data_source: DataSourceType = "literature",
-                                alloy_name: str = "AlGaAs") -> float:
-    """
-    Calculate electron mobility for any alloy composition.
-
-    Args:
-        x: Composition variable (0.0 to 1.0)
-        data_source: "literature" or "mp_api"
-        alloy_name: Name of alloy system (default: 'AlGaAs' for compatibility)
-
-    Returns:
-        Electron mobility in cm²/(V·s)
-    """
-    calc = PropertyCalculator(alloy_name, data_source)
-    return calc.calculate_property("electron_mobility", x)
-
-
-def get_band_gap_type(x: float, alloy_name: str = "AlGaAs") -> str:
-    """
-    Get band gap type (direct/indirect) for any alloy composition.
-
-    Args:
-        x: Composition variable (0.0 to 1.0)
-        alloy_name: Name of alloy system (default: 'AlGaAs' for compatibility)
-
-    Returns:
-        "direct" or "indirect"
-    """
-    registry = get_material_registry()
-    alloy = registry.get_alloy(alloy_name)
-    return alloy.determine_band_gap_type(x)
-
-
-# ============================================================================
-# BATCH CALCULATION FUNCTIONS
-# ============================================================================
-
-def calculate_all_properties(
-    x: float,
-    data_source: DataSourceType = "literature",
-    property_list: Optional[List[str]] = None,
-    use_tb_electronic_structure: bool = True,
-    alloy_name: str = "AlGaAs"
-) -> Dict[str, Any]:
-    """
-    Calculate all available properties for a composition.
-
-    Args:
-        x: Composition variable (0.0 to 1.0)
-        data_source: "literature" or "mp_api"
-        property_list: List of properties to calculate (None = all available)
-        use_tb_electronic_structure: Use tight-binding for electronic properties
-        alloy_name: Name of alloy system (default: 'AlGaAs')
-
-    Returns:
-        Dictionary of all calculated properties
-    """
-    if property_list is None:
-        # Default important properties
-        property_list = [
-            "lattice_constant", "band_gap", "band_gap_type",
-            "effective_mass_electron", "effective_mass_hole_heavy",
-            "dielectric_constant_static", "electron_mobility",
-            "thermal_conductivity", "bulk_modulus"
-        ]
-
-    calc = PropertyCalculator(alloy_name, data_source, use_tb_electronic_structure)
-    return calc.calculate_multiple_properties(property_list, x)
-
-
-def calculate_composition_series(
-    x_values: List[float],
-    properties: List[str],
-    data_source: DataSourceType = "literature",
-    alloy_name: str = "AlGaAs"
-) -> Dict[str, Dict[float, Any]]:
-    """
-    Calculate properties for a series of compositions.
-
-    Args:
-        x_values: List of compositions (0.0 to 1.0)
-        properties: List of property names to calculate
-        data_source: "literature" or "mp_api"
-        alloy_name: Name of alloy system (default: 'AlGaAs' for compatibility)
-
-    Returns:
-        Dictionary mapping property names to {x: value} dictionaries
-    """
-    calc = PropertyCalculator(alloy_name, data_source)
-    results = {}
-
-    for prop in properties:
-        results[prop] = calc.calculate_property_range(prop, x_values)
-
-    return results
+# Batch calculation functions removed - use PropertyCalculator class directly
 
 
 # ============================================================================

@@ -40,7 +40,7 @@ def load_binary_structures(
     mp_id2: Optional[str] = None
 ) -> tuple[Structure, Structure]:
     """
-    Load binary material structures from data directory.
+    Load and standardize to cubic primitive cells.
 
     This function is material-agnostic and can load any materials
     defined in the materials registry.
@@ -55,10 +55,11 @@ def load_binary_structures(
         Tuple of (material1_structure, material2_structure)
     """
     from .constants import get_material_registry
-    
+    from pymatgen.symmetry.analyzer import SpacegroupAnalyzer
+
     config = get_config()
     data_dir = Path(config.get('paths.data_dir', 'data/'))
-    
+
     # Get MP IDs from materials registry if not provided
     registry = get_material_registry()
     if mp_id1 is None:
@@ -72,7 +73,7 @@ def load_binary_structures(
     mat1_file = data_dir / mp_id1 / "material_data.json"
     if not mat1_file.exists():
         raise FileNotFoundError(f"Material data not found: {mat1_file}")
-    
+
     with open(mat1_file, 'r') as f:
         mat1_data = json.load(f)
     structure1 = Structure.from_dict(mat1_data['structure'])
@@ -81,12 +82,28 @@ def load_binary_structures(
     mat2_file = data_dir / mp_id2 / "material_data.json"
     if not mat2_file.exists():
         raise FileNotFoundError(f"Material data not found: {mat2_file}")
-    
+
     with open(mat2_file, 'r') as f:
         mat2_data = json.load(f)
     structure2 = Structure.from_dict(mat2_data['structure'])
-    
-    logger.info(f"Loaded structures for {material1} ({mp_id1}) and {material2} ({mp_id2})")
+
+    # Convert to primitive cubic cells
+    sga1 = SpacegroupAnalyzer(structure1)
+    structure1 = sga1.get_primitive_standard_structure()
+
+    sga2 = SpacegroupAnalyzer(structure2)
+    structure2 = sga2.get_primitive_standard_structure()
+
+    # Verify they're cubic
+    def is_cubic(lattice):
+        return (abs(lattice.a - lattice.b) < 1e-6 and
+                abs(lattice.b - lattice.c) < 1e-6 and
+                all(abs(angle - 90.0) < 1e-6 for angle in lattice.angles))
+
+    if not (is_cubic(structure1.lattice) and is_cubic(structure2.lattice)):
+        logger.warning("Structures are not cubic! This may cause issues.")
+
+    logger.info(f"Loaded and standardized structures for {material1} ({mp_id1}) and {material2} ({mp_id2})")
 
     return structure1, structure2
 
@@ -99,8 +116,8 @@ def generate_structures(
     x_values: Optional[List[float]] = None,
     supercell_size: tuple[int, int, int] = (2, 2, 2),
     data_source: str = "literature",
-    enable_charge_density: bool = True,
-    enable_relaxation: bool = False
+    enable_charge_density: Optional[bool] = None,
+    enable_relaxation: Optional[bool] = None
 ) -> List[Dict[str, Any]]:
     """
     Generate alloy structures through supercell interpolation.
@@ -128,6 +145,12 @@ def generate_structures(
     config = get_config()
     if x_values is None:
         x_values = config.get('system.compositions.x_values', [0.0, 0.25, 0.5, 0.75, 1.0])
+
+    # Use config defaults if not explicitly set
+    if enable_charge_density is None:
+        enable_charge_density = config.get('features.enable_charge_density', True)
+    if enable_relaxation is None:
+        enable_relaxation = config.get('features.enable_relaxation', True)
 
     # Load binary structures
     logger.info(f"Loading binary structures for {material1} and {material2}...")
@@ -199,11 +222,37 @@ def calculate_properties(
         x_values = config.get('system.compositions.x_values', [0.0, 0.25, 0.5, 0.75, 1.0])
 
     if properties is None:
+        # Complete list of all available properties from YAML files
         properties = [
-            "lattice_constant", "band_gap", "band_gap_type",
-            "effective_mass_electron", "effective_mass_hole_heavy",
-            "dielectric_constant_static", "electron_mobility",
-            "thermal_conductivity", "bulk_modulus"
+            # Core electronic properties
+            "lattice_constant",
+            "band_gap",
+            "band_gap_type",
+            "electron_affinity",
+            "effective_mass_electron",
+            "effective_mass_hole_heavy",
+            "effective_mass_hole_light",
+            
+            # Optical properties
+            "dielectric_constant_static",
+            "dielectric_constant_high_freq",
+            "refractive_index",
+            
+            # Mechanical properties
+            "bulk_modulus",
+            "shear_modulus",
+            "youngs_modulus",
+            "poissons_ratio",
+            "elastic_constant_c11",
+            "elastic_constant_c12",
+            "elastic_constant_c44",
+            
+            # Thermal properties
+            "thermal_conductivity",
+            
+            # Transport properties
+            "electron_mobility",
+            "hole_mobility"
         ]
 
     # Calculate properties for all compositions (material-agnostic)
@@ -251,9 +300,9 @@ def run_calculation_pipeline(
     properties_output_file: str = "data/outputs/calculations/properties.json",
     x_values: Optional[List[float]] = None,
     data_source: str = "literature",
-    enable_charge_density: bool = True,
-    enable_relaxation: bool = False,
-    use_tb_electronic_structure: bool = True
+    enable_charge_density: Optional[bool] = None,
+    enable_relaxation: Optional[bool] = None,
+    use_tb_electronic_structure: Optional[bool] = None
 ) -> Dict[str, Any]:
     """
     Run the complete calculation pipeline: structure generation and property calculation.
@@ -277,6 +326,15 @@ def run_calculation_pipeline(
         Combined results from structure generation and property calculation
     """
     logger.info(f"Starting Enhanced {alloy_system} Calculation Pipeline...")
+
+    # Load config for defaults
+    config = get_config()
+    if enable_charge_density is None:
+        enable_charge_density = config.get('features.enable_charge_density', True)
+    if enable_relaxation is None:
+        enable_relaxation = config.get('features.enable_relaxation', True)
+    if use_tb_electronic_structure is None:
+        use_tb_electronic_structure = config.get('features.enable_tight_binding', True)
 
     # Generate structures with advanced features
     structures = generate_structures(

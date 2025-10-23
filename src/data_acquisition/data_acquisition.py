@@ -290,29 +290,52 @@ class MaterialsProjectScraper:
         """
         results = {}
 
-        # Note: MPRester uses connection pooling, but we still use threading
-        # for concurrent API calls
-        with ThreadPoolExecutor(max_workers=max_workers) as executor:
-            future_to_id = {
-                executor.submit(
-                    self.fetch_material_data,
-                    mat_id,
-                    fetch_structure,
-                    fetch_bandstructure,
-                    fetch_dos,
-                    fetch_phonon,
-                    fetch_charge_density
-                ): mat_id
-                for mat_id in material_ids
-            }
+        # Detect if we're running in Jupyter (IPython kernel)
+        try:
+            get_ipython()  # type: ignore
+            is_jupyter = True
+            logger.info("Jupyter environment detected - using sequential fetching")
+        except NameError:
+            is_jupyter = False
 
-            for future in as_completed(future_to_id):
-                material_id = future_to_id[future]
+        # Use sequential execution in Jupyter to avoid ContextVar issues
+        if is_jupyter:
+            for mat_id in material_ids:
                 try:
-                    material_data = future.result()
-                    results[material_id] = material_data
+                    material_data = self.fetch_material_data(
+                        mat_id,
+                        fetch_structure,
+                        fetch_bandstructure,
+                        fetch_dos,
+                        fetch_phonon,
+                        fetch_charge_density
+                    )
+                    results[mat_id] = material_data
                 except Exception as e:
-                    logger.error(f"Failed to fetch data for {material_id}: {e}")
+                    logger.error(f"Failed to fetch data for {mat_id}: {e}")
+        else:
+            # Use parallel execution in normal Python environments
+            with ThreadPoolExecutor(max_workers=max_workers) as executor:
+                future_to_id = {
+                    executor.submit(
+                        self.fetch_material_data,
+                        mat_id,
+                        fetch_structure,
+                        fetch_bandstructure,
+                        fetch_dos,
+                        fetch_phonon,
+                        fetch_charge_density
+                    ): mat_id
+                    for mat_id in material_ids
+                }
+
+                for future in as_completed(future_to_id):
+                    material_id = future_to_id[future]
+                    try:
+                        material_data = future.result()
+                        results[material_id] = material_data
+                    except Exception as e:
+                        logger.error(f"Failed to fetch data for {material_id}: {e}")
 
         return results
 
