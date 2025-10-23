@@ -72,23 +72,15 @@ results = run_full_pipeline(
 
 ## 📊 Pipeline Architecture
 
-<<<<<<< HEAD
 ```
 Materials Project API → Data Acquisition → Structure Generation → Property Calculation → Graph Conversion → GNN Training
         ↓                    ↓                    ↓                    ↓                    ↓              ↓
    Validation         CIF Processing     Charge Density      Electronic Structure    Feature Extraction  Prediction
    Caching            YAML Updates       Interpolation       Tight-Binding          Normalization       Analysis
-=======
-1. **Clone the repository**
-```bash
-git clone -b version-0.1-improved https://github.com/hasandafa/s-cgcnn.git
-cd s-cgcnn
->>>>>>> 5958d4264453e67be10726dc0518d9639ae9d00f
 ```
 
 ### Core Modules
 
-<<<<<<< HEAD
 | Module | Purpose | Key Features |
 |--------|---------|--------------|
 | **Data Acquisition** | Fetch and validate materials data | MP-API integration, caching, validation |
@@ -140,15 +132,6 @@ s-cgcnn/
 ## 🧪 Usage Examples
 
 ### Property Calculation
-=======
-3. **Set up key.env and add your Materials Project API key**
-```bash
-# Add your API key to key.env
-echo "MP_API_KEY=your_api_key_here" > key.env
-```
-
-## 🔬 Usage Examples
->>>>>>> 5958d4264453e67be10726dc0518d9639ae9d00f
 
 ```python
 from src.calculation import PropertyCalculator
@@ -168,7 +151,6 @@ print(f"Band gap: {properties['band_gap']:.3f} eV")
 ```python
 from src.calculation import calculate_electronic_structure
 
-<<<<<<< HEAD
 # Advanced electronic structure calculation
 results = calculate_electronic_structure(
     "AlGaAs", x=0.3,
@@ -179,14 +161,6 @@ results = calculate_electronic_structure(
 
 print(f"Band gap: {results['band_gap']:.3f} eV")
 print(f"Direct gap: {results['is_direct']}")
-=======
-```bash
-# Test full pipeline (quick mode)
-python tests/test_full_pipeline.py --quick
-
-# Test full pipeline with all features
-python tests/test_full_pipeline.py --full
->>>>>>> 5958d4264453e67be10726dc0518d9639ae9d00f
 ```
 
 ### Graph Generation
@@ -247,18 +221,8 @@ material:
   mp_id: "mp-20305"
 
 literature:
-<<<<<<< HEAD
   band_gap: 0.354
   lattice_constant: 6.0583
-=======
-  source: "Adachi, S. The Handbook on Optical Constants of Semiconductors In Tables and Figures"
-  temperature: 300
-  physical:
-    lattice_constant: 6.0583
-  electronic:
-    band_gap: 0.354
-    band_gap_type: "direct"
->>>>>>> 5958d4264453e67be10726dc0518d9639ae9d00f
   # ... more properties
 ```
 
@@ -320,11 +284,7 @@ python tests/test_full_pipeline.py --full
 python -m pytest tests/test_calculation.py -v
 ```
 
-<<<<<<< HEAD
 ## 📊 Performance
-=======
-## 📈 Output Structure (Alpha Edition)
->>>>>>> 5958d4264453e67be10726dc0518d9639ae9d00f
 
 - **Structure Generation**: ~1-5 seconds per composition
 - **Property Calculation**: ~0.1-1 second per composition
@@ -395,7 +355,6 @@ python -m pytest tests/test_calculation.py -v
 
 For detailed migration instructions, see the module-specific README files in `src/*/README.md`.
 
-<<<<<<< HEAD
 ## 🤝 Contributing
 
 1. **Add New Materials**: Create YAML files in `materials/properties/`
@@ -427,18 +386,3 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 **Version**: 1.0.0  
 **Date**: 2025-10-23  
 **Repository**: https://github.com/hasandafa/s-cgcnn
-=======
-## 📚 Documentation
-
-- **QUICK_START.md**: Quick start guide for users
-- **materials/properties/README.md**: Material file format guide
-
-## 📄 License
-
-This project is licensed under the MIT License - see the LICENSE file for details.
----
-
-**Version**: 0.1-improved (Thicc Changes)  
-**Date**: 2025-10-17  
-**Authors**: Abdullah Hasan Dafa, Razasyattar M. N.
->>>>>>> 5958d4264453e67be10726dc0518d9639ae9d00f
